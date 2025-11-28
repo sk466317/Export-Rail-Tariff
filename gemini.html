@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Export Rail Tariff Generator - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { background-color: #1f2937; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #e5e7eb; zoom: 90%; overflow: hidden; }
+        .main-wrapper { display: flex; height: 100vh; }
+        .sidebar { width: 260px; background-color: #ffffff; border-left: 1px solid #d1d5db; overflow-y: auto; flex-shrink: 0; color: #374151; box-shadow: -4px 0 15px rgba(0,0,0,0.1); }
+        .content-area { flex: 1; overflow-y: auto; position: relative; }
+
+        /* Login Screen Styles */
+        #login-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+            z-index: 9999; display: flex; align-items: center; justify-content: center;
+        }
+        .login-box {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            border-top: 6px solid #fb923c;
+        }
+
+        /* Role based visibility */
+        .hidden-by-role { display: none !important; }
+
+        @media print {
+            @page { size: A4 landscape; margin: 5mm; }
+            body { background-color: white !important; color: black !important; -webkit-print-color-adjust: exact; zoom: 100%; overflow: visible; }
+            .main-wrapper { display: block; height: auto; }
+            .sidebar { display: none !important; } 
+            .content-area { width: 100% !important; overflow: visible; }
+            .page-container { background-color: #fff !important; box-shadow: none !important; border: none !important; width: 100% !important; margin: 0 !important; max-width: 100% !important; }
+            .no-print { display: none !important; }
+            .table-block { break-inside: avoid; page-break-inside: avoid; border-bottom: none !important; }
+            input:disabled, select:disabled, textarea:disabled { color: #000 !important; opacity: 1 !important; background-color: transparent !important; border: none !important; font-weight: normal !important; }
+            #login-screen { display: none !important; }
+        }
+
+        .pdf-mode { background-color: white !important; color: black !important; font-family: Arial, Helvetica, sans-serif !important; }
+        .pdf-mode .no-pdf { display: none !important; } 
+        .pdf-mode * { box-shadow: none !important; text-shadow: none !important; }
+        .pdf-mode table, .pdf-mode th, .pdf-mode td, .pdf-mode input, .pdf-mode select, .pdf-mode textarea, .pdf-mode .input-field { border: 0.5px solid #000 !important; background-color: transparent !important; color: #000 !important; border-radius: 0 !important; }
+        .pdf-mode th { background-color: #eee !important; color: #000 !important; font-weight: bold !important; font-size: 9px !important; }
+        .pdf-mode input, .pdf-mode select { font-size: 10px !important; height: auto !important; min-height: 20px !important; padding: 4px 2px !important; margin: 0 !important; line-height: 1.2 !important; font-weight: bold !important; }
+        .pdf-mode textarea { font-size: 8px !important; line-height: 1.1 !important; padding: 2px !important; min-height: 40px !important; }
+        
+        .bg-form-base { background-color: #bfdbfe; } 
+
+        /* --- TABLE STYLING --- */
+        .tariff-table { width: 100%; border-collapse: collapse; font-size: 0.65rem; table-layout: fixed; font-family: 'Inter', sans-serif; } 
+        .tariff-table th { border: 1px solid #475569; padding: 6px 4px; text-align: center; font-weight: 700; text-transform: uppercase; background-color: #0f172a; color: white; white-space: normal; line-height: 1.2; letter-spacing: 0.5px; }
+        .tariff-table td { border: 1px solid #64748b; padding: 4px 2px; text-align: center; color: #334155; }
+        
+        /* CLEAN LOOK: Inputs are blank by default */
+        .tariff-table input { width: 100%; text-align: center; background: transparent; border: none; font-size: 0.7rem; font-weight: 600; color: #1e293b; font-family: 'Inter', sans-serif; }
+        .tariff-table input:placeholder-shown { background-color: transparent; }
+
+        /* Zebra Striping */
+        .tariff-table tbody tr:nth-child(odd) { background-color: #ffffff; }
+        .tariff-table tbody tr:nth-child(even) { background-color: #f8fafc; }
+
+        /* Highlight Row */
+        .highlight-row { background-color: #fff7ed !important; }
+        .highlight-row td { border-top: 1px solid #fdba74; border-bottom: 1px solid #fdba74; color: #c2410c; }
+        .highlight-row td:first-child { border-left: 4px solid #f97316 !important; }
+        .highlight-row input { color: #c2410c !important; font-weight: 800 !important; }
+
+        .bg-yellow-col { background-color: #fef08a !important; }
+        .bg-teal-col { background-color: #ccfbf1 !important; }
+        .bg-gray-col { background-color: #f1f5f9; color: #374151; font-weight: bold; }
+        .bg-red-col { background-color: #fee2e2; color: #dc2626; font-weight: 900; }
+
+        .input-field { border: 1px solid #4b5563; border-radius: 4px; padding: 4px 8px; width: 100%; font-size: 0.75rem; background-color: #f3f4f6; color: #111827; font-weight: 700; }
+        .input-field:disabled { background-color: #e5e7eb; color: #6b7280; cursor: not-allowed; }
+
+        .status-valid { background-color: #bbf7d0; color: #14532d; border: 2px solid #15803d; } 
+        .status-expired { background-color: #fee2e2; color: #991b1b; border: 2px solid #ef4444; }
+        .status-pending { background-color: #f3f4f6; color: #6b7280; border: 2px solid #9ca3af; }
+
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        #loadingOverlay { background: rgba(0,0,0,0.8); display: none; z-index: 4000; } 
+        
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .sidebar::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+        .sidebar::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        .customer-item { cursor: pointer; transition: background 0.2s; }
+        .customer-item:hover { background-color: #dbeafe !important; }
+
+        .report-table th { position: sticky; top: 0; background: #fb923c; color: black; z-index: 10; border: 1px solid #c2410c; }
+        .report-table tr:nth-child(even) { background-color: #fff7ed; }
+        .report-table tr:hover { background-color: #fed7aa; }
+        .report-card { border: 1px solid #c2410c; border-radius: 8px; margin-bottom: 20px; background: white; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .report-header { background: #c2410c; color: white; padding: 8px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 0.85rem; }
+        #reportContent { color: black !important; }
+        #reportContent table { color: black !important; border-color: #c2410c !important; }
+        #reportContent td, #reportContent th { border-color: #fdba74 !important; }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN SYSTEM -->
+<div id="login-screen">
+    <div class="login-box animate-fade-in-down">
+        <div class="text-center mb-6">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-900 mb-4">
+                <i class="fas fa-train text-3xl"></i>
+            </div>
+            <h2 class="text-2xl font-extrabold text-blue-900">Export Rail Tariff Generator</h2>
+            <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">Authorized Access Only</p>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Select User</label>
+                <select id="loginUser" class="w-full border-2 border-gray-300 rounded p-2 text-sm font-bold text-blue-900 focus:border-blue-500 focus:outline-none bg-gray-50">
+                    <option value="">-- Select Identity --</option>
+                    <option value="ANURAG PANDEY">ANURAG PANDEY</option>
+                    <option value="CHIRAG RANA">CHIRAG RANA</option>
+                    <option value="MOHIK SHARMA">MOHIK SHARMA</option>
+                    <option value="DAMANJIT SINGH">DAMANJIT SINGH</option>
+                    <option value="HARSIMRANJEET SINGH">HARSIMRANJEET SINGH</option>
+                    <option value="KUNAL SAHI">KUNAL SAHI</option>
+                    <option value="RAJESH KUMAR">RAJESH KUMAR</option>
+                    <option value="SUMAN KUMARI">SUMAN KUMARI</option>
+                    <option value="VIKAM SINGH">VIKAM SINGH</option>
+                    <option value="ROHIN KALRA">ROHIN KALRA</option>
+                    <option value="ACCOUNTS">ACCOUNTS</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Password</label>
+                <div class="relative">
+                    <input type="password" id="loginPass" class="w-full border-2 border-gray-300 rounded p-2 text-sm font-bold text-blue-900 focus:border-blue-500 focus:outline-none pl-8" placeholder="Enter Password">
+                    <i class="fas fa-lock absolute left-3 top-3 text-gray-400 text-xs"></i>
+                </div>
+            </div>
+
+            <button onclick="attemptLogin()" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded shadow transition duration-200 uppercase text-sm">
+                Secure Login <i class="fas fa-arrow-right ml-2"></i>
+            </button>
+            
+            <div id="loginError" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-2 text-xs font-bold mt-2 text-center">
+                <i class="fas fa-exclamation-circle mr-1"></i> Invalid Password. Try Again.
+            </div>
+        </div>
+        <div class="mt-6 text-center text-[10px] text-gray-400">
+            Hind Terminals Pvt Ltd &copy; 2025
+        </div>
+    </div>
+</div>
+
+<!-- MAIN APPLICATION (Initially Hidden) -->
+<div class="main-wrapper" id="appContent" style="display: none;">
+    <div class="content-area p-2 md:p-4" id="mainBody">
+
+        <div class="sticky top-0 z-50 max-w-[1600px] mx-auto mb-4 no-print" id="topControls">
+            <div class="bg-gray-800 border-l-4 border-blue-600 p-3 rounded shadow-md flex flex-col md:flex-row justify-between items-end gap-3">
+                <div class="flex flex-col gap-2">
+                    <div id="syncStatus" class="text-[10px] font-bold text-gray-300"><i class="fas fa-circle-notch fa-spin mr-1"></i> Ready</div>
+                    <div class="flex gap-1 items-center">
+                        <input type="text" id="searchBox" placeholder="Search Cloud..." class="border border-gray-400 rounded px-2 py-1 text-xs w-64 text-blue-900 font-bold bg-white" onkeyup="filterDropdown()">
+                        
+                        <select id="cloudHistory" class="border border-gray-400 rounded px-2 py-1 text-xs w-64 text-blue-900 font-bold bg-blue-50" onchange="loadRecordFromDropdown()">
+                            <option>-- Load Record --</option>
+                        </select>
+                        
+                        <button onclick="fetchSheetData()" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded shadow text-xs font-bold" title="Refresh Data"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2 justify-end">
+                    <div class="text-white text-xs font-bold flex items-center mr-2 bg-gray-700 px-2 rounded">
+                        <i class="fas fa-user-circle mr-1"></i> <span id="currentUserDisplay">User</span>
+                    </div>
+                    <!-- Reports: Visible to All -->
+                    <button onclick="openReportModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded shadow font-bold text-xs"><i class="fas fa-chart-pie mr-1"></i> Reports</button>
+                    
+                    <!-- Admin Only Buttons -->
+                    <button onclick="sendEmail()" class="admin-only bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded shadow font-bold text-xs"><i class="fas fa-envelope mr-1"></i> Email</button>
+                    <button onclick="copyToClipboard()" class="admin-only bg-teal-600 hover:bg-teal-700 text-white px-4 py-1.5 rounded shadow font-bold text-xs border border-teal-500"><i class="fas fa-copy mr-1"></i> Copy Img</button>
+                    <button onclick="downloadPDF()" class="admin-only bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded shadow font-bold text-xs"><i class="fas fa-file-pdf mr-1"></i> PDF</button>
+                    
+                    <button id="saveBtn" onclick="saveDataToSheet()" class="admin-only bg-green-600 hover:bg-green-700 text-white px-6 py-1.5 rounded shadow font-bold text-xs animate-pulse flex items-center gap-2">
+                        <i class="fas fa-save"></i> <span id="saveBtnText">SAVE NEW</span>
+                    </button>
+                    <button id="unlockBtn" onclick="unlockForm()" class="admin-only hidden bg-purple-600 hover:bg-purple-700 text-white px-6 py-1.5 rounded shadow font-bold text-xs flex items-center gap-2">
+                        <i class="fas fa-lock-open"></i> UNLOCK / EDIT
+                    </button>
+                    <button id="addTableBtn" onclick="addNewTableBlock()" class="admin-only bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 rounded shadow font-bold text-xs border border-orange-800"><i class="fas fa-table mr-1"></i> Add Tariff Table</button>
+                    <button type="button" onclick="resetForm()" class="admin-only bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded shadow font-bold text-xs"><i class="fas fa-plus mr-1"></i> New Sheet</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="printArea" class="page-container max-w-[1600px] mx-auto bg-form-base shadow-2xl p-6 rounded-lg border border-gray-400 text-black min-h-[800px]">
+            <div class="border-b-4 border-blue-900 pb-2 mb-4 flex justify-between items-start">
+                <div>
+                    <h2 class="text-xl font-extrabold text-blue-900 uppercase tracking-wide">Export Rail Tariff Sheet</h2>
+                    <p class="text-gray-700 text-xs font-bold uppercase tracking-widest">(Export Rail Margins & Billing)</p>
+                </div>
+                <div class="text-right">
+                    <div class="flex items-center justify-end mb-1"><span class="text-xs font-bold text-gray-800 mr-2 uppercase">Ref No:</span><input type="text" id="tariffNo" readonly class="text-right font-mono font-bold text-blue-900 border-none w-32 bg-transparent"></div>
+                    <div class="flex items-center justify-end"><span class="text-xs font-bold text-gray-800 mr-2 uppercase">Date:</span><input type="date" id="dateToday" readonly class="text-right text-xs bg-transparent border-none w-32 font-bold"></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-5 gap-3 mb-4 bg-white p-4 rounded border border-gray-600 shadow-sm">
+                <div class="col-span-1">
+                    <label class="block text-[10px] font-bold text-blue-700 uppercase">Commodity <span class="text-red-600">*</span></label>
+                    <select id="commodity" class="input-field h-8 bg-blue-50 border-blue-300 text-blue-900"><option value="">-- Select --</option><option>AGRI COMMODITY</option><option>NON-AGRI COMMODITY</option></select>
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-[10px] font-bold text-gray-600 uppercase">Customer Name <span class="text-red-600">*</span></label>
+                    <input type="text" id="customerName" oninput="this.value = this.value.toUpperCase()" class="input-field font-bold text-blue-900 h-8 bg-white uppercase border-l-4 border-blue-600" placeholder="ENTER NAME">
+                </div>
+                <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Customer Type <span class="text-red-600">*</span></label><select id="customerType" class="input-field h-8 bg-white uppercase"><option value="">-- Select --</option><option>Importer</option><option>CHA</option><option>Forwarder</option><option>Shipping Line</option><option>Transporter</option></select></div>
+                <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Vol / Month <span class="text-red-600">*</span></label><input type="text" id="volMonth" class="input-field h-8 bg-white uppercase" placeholder="TEUs"></div>
+
+                <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Credit Days <span class="text-red-600">*</span></label><input type="text" id="creditDays" class="input-field h-8 bg-white" list="creditOpts" placeholder="-- Select --"><datalist id="creditOpts"><option value="- Days"><option value="15 Days"><option value="30 Days"></datalist></div>
+                <div class="col-span-1">
+                    <label class="block text-[10px] font-bold text-gray-600 uppercase">Sales Person</label>
+                    <select id="salesPerson" class="input-field h-8 bg-white text-center font-bold text-blue-800">
+                        <option value="">-- Select --</option>
+                        <option>ANURAG PANDEY</option>
+                        <option>CHIRAG RANA</option>
+                        <option>MOHIK SHARMA</option>
+                        <option>DAMANJIT SINGH</option>
+                        <option>HARSIMRANJEET SINGH</option>
+                        <option>KUNAL SAHI</option>
+                        <option>RAJESH KUMAR</option>
+                        <option>SUMAN KUMARI</option>
+                        <option>VIKAM SINGH</option>
+                        <option>ROHIN KALRA</option>
+                    </select>
+                </div>
+                <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Billing Terms <span class="text-red-600">*</span></label><select id="billingTerms" class="input-field h-8 bg-white uppercase"><option value="">-- Select --</option><option>Net Billing</option><option>Commission Claimed</option></select></div>
+                <div class="col-span-1"><label class="block text-[10px] font-bold text-green-700 uppercase">Stream</label><input type="text" id="stream" value="Mundra - Kilaraipur" class="input-field h-8 bg-yellow-300 text-black border-yellow-500 font-extrabold"></div>
+                <div class="col-span-1">
+                    <label class="block text-[10px] font-bold text-gray-600 uppercase">Status</label>
+                    <div id="mainStatus" class="input-field h-8 flex items-center justify-center font-bold text-[10px] uppercase rounded border text-center status-pending">-</div>
+                </div>
+            </div>
+
+            <div class="mb-1 pt-4 border border-gray-600 bg-white p-2 rounded">
+                <div class="flex justify-between items-end mb-1">
+                    <div class="bg-amber-600 text-white px-3 py-1.5 rounded-t font-bold text-xs uppercase"><i class="fas fa-truck mr-2"></i> Transport Tariff</div>
+                    <div class="mb-1 flex items-center gap-2">
+                        <label class="text-[10px] font-bold text-gray-700 uppercase">Claimed By:</label>
+                        <input type="text" class="border border-gray-600 rounded px-2 py-0.5 text-xs font-bold w-80 bg-white uppercase" value="TRANSPORTER">
+                        <button onclick="addTransportRow()" class="bg-white text-amber-700 hover:bg-gray-100 text-[10px] font-bold px-2 py-0.5 rounded no-print shadow uppercase border border-amber-600 no-pdf">Add Location</button>
+                    </div>
+                </div>
+                <table class="tariff-table border border-gray-600" id="tableTransport">
+                    <thead><tr class="text-white" style="background-color: #d97706;"><th class="w-32">Transporter</th><th class="w-32">Origin</th><th class="w-32">Destination</th><th class="w-24">Discount (₹) 20"</th><th class="w-24">Discount (₹) 40"</th><th class="w-64">Remarks</th><th class="bg-white border-none w-6 no-print"></th></tr></thead>
+                    <tbody id="tbodyTransport"></tbody>
+                </table>
+            </div>
+
+            <div class="mb-12 pt-2 bg-white p-2 rounded border border-gray-600">
+                <div class="flex justify-between items-end mb-1">
+                    <div class="bg-teal-700 text-white px-3 py-1.5 rounded-t font-bold text-xs uppercase"><i class="fas fa-gift mr-2"></i> Incentive Details</div>
+                    <div class="mb-1 flex items-center gap-2">
+                        <label class="text-[10px] font-bold text-gray-700 uppercase">Claimed By:</label>
+                        <input type="text" class="border border-gray-600 rounded px-2 py-0.5 text-xs font-bold w-80 bg-white uppercase" value="CHA">
+                        <button onclick="addIncentiveRow()" class="bg-white text-teal-800 hover:bg-gray-100 text-[10px] font-bold px-2 py-0.5 rounded no-print shadow uppercase border border-teal-700 no-pdf">Add Row</button>
+                    </div>
+                </div>
+                <table class="tariff-table border border-gray-600">
+                    <thead><tr class="text-white" style="background-color: #0d9488;"><th class="w-48">Line</th><th>Discount 20"</th><th>Discount 40"</th><th class="w-64">Remarks</th><th class="bg-white border-none w-6 no-print"></th></tr></thead>
+                    <tbody id="tbodyIncentive"></tbody>
+                </table>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 mb-4">
+                <div class="bg-yellow-50 p-2 rounded border border-gray-600">
+                    <label class="block text-[10px] font-bold text-yellow-900 mb-1 uppercase">1. THC Subsidy Remarks</label>
+                    <textarea id="remTHC" class="w-full border border-gray-500 rounded p-1 text-xs bg-white resize-none" rows="4"></textarea>
+                </div>
+                <div class="bg-blue-50 p-2 rounded border border-gray-600">
+                    <label class="block text-[10px] font-bold text-blue-900 mb-1 uppercase">2. Special Arrangements</label>
+                    <textarea id="remSpecial" class="w-full border border-gray-500 rounded p-1 text-xs bg-white resize-none" rows="4"></textarea>
+                </div>
+                <div class="bg-gray-50 p-2 rounded border border-gray-600">
+                    <label class="block text-[10px] font-bold text-gray-900 mb-1 uppercase">3. ADDITIONAL REMARKS</label>
+                    <textarea id="remAdd" class="w-full border border-gray-500 rounded p-1 text-xs bg-white resize-none" rows="4"></textarea>
+                </div>
+            </div>
+
+            <div id="tablesContainer"></div>
+            
+            <div class="mt-6 pt-4 border-t border-gray-600 flex justify-between print-only">
+                <div class="text-center">
+                    <p class="font-bold text-[10px] border-t border-black px-8 pt-1 inline-block text-black uppercase">Prepared By</p>
+                    <div id="preparedByName" class="text-[10px] font-bold text-black uppercase mt-1"></div>
+                </div>
+                <div class="text-center"><p class="font-bold text-[10px] border-t border-black px-8 pt-1 inline-block text-black uppercase">Approved By</p></div>
+            </div>
+        </div>
+
+    </div> <div class="sidebar no-print p-2">
+        <div class="sticky top-0 bg-white z-10 pb-2 border-b border-gray-300"> 
+            <h2 class="text-sm font-bold text-gray-800 mb-2 text-center uppercase tracking-widest">Customer List</h2>
+            <input type="text" id="sidebarSearch" placeholder="Search List..." onkeyup="filterSidebarList()" class="w-full border border-blue-300 rounded px-2 py-1 text-xs mb-2 mt-1 focus:outline-none focus:border-blue-600 text-black font-bold">
+            <button onclick="openCustomerModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-3 rounded font-bold text-xs flex items-center justify-center shadow"><i class="fas fa-plus mr-2"></i> Add Customer</button>
+        </div>
+        <div class="flex justify-between text-[10px] font-bold text-gray-500 border-b border-gray-200 py-1 px-2 bg-gray-50">
+            <span>Customer Name</span>
+            <span>Add Date</span>
+        </div>
+        <div class="overflow-y-auto h-[calc(100vh-160px)]">
+            <ul id="customerList" class="space-y-0.5"></ul>
+        </div>
+    </div>
+
+</div> <div id="loadingOverlay" class="overlay hidden" style="background: rgba(0,0,0,0.8);">
+    <div class="bg-white p-6 rounded shadow-xl w-96 border border-gray-300 text-center">
+        <div id="progressSection"> 
+            <div class="mb-4"><div class="animate-spin rounded-full h-10 w-10 border-b-4 border-blue-600 mx-auto"></div></div>
+            <h2 class="text-lg font-bold text-blue-900 mb-2">Saving Tariff Sheet.....</h2>
+            <div class="w-full bg-gray-200 rounded-full h-3 mb-1 overflow-hidden"><div id="progressBar" class="bg-blue-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div></div>
+            <p class="text-xs text-gray-500 font-mono" id="progressText">0%</p>
+        </div>
+        <div id="successSection" class="hidden"> 
+            <div class="mb-3 text-green-500 text-6xl animate-bounce"><i class="fas fa-check-circle"></i></div>
+            <h2 class="text-xl font-extrabold text-gray-800 mb-4">Saved Successfully!</h2>
+            <button onclick="closeLoading()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full shadow outline-none">OK</button>
+        </div>
+    </div>
+</div>
+
+<div id="customerModal" class="overlay hidden" style="background: rgba(0,0,0,0.6);">
+    <div class="bg-white p-6 rounded shadow-xl w-96 border border-gray-300">
+        <h3 class="font-bold text-lg mb-2 text-blue-900">Add Customers</h3>
+        <textarea id="bulkCustomerInput" class="w-full border border-gray-400 rounded p-2 text-sm h-32 focus:outline-none focus:border-blue-500 text-black" placeholder="Customer A, Customer B..."></textarea>
+        <div class="flex justify-end gap-2 mt-4">
+            <button onclick="closeCustomerModal()" class="px-4 py-1 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold">Cancel</button>
+            <button onclick="saveBulkCustomers()" class="px-4 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-bold">Add List</button>
+        </div>
+    </div>
+</div>
+
+<div id="reportModal" class="overlay hidden" style="background: rgba(0,0,0,0.9);">
+    <div class="bg-white rounded-lg shadow-2xl w-[95%] h-[90%] flex flex-col border border-gray-600">
+        <div class="bg-gray-800 p-4 border-b border-gray-600 flex justify-between items-center">
+            <h2 class="text-xl font-bold text-white"><i class="fas fa-chart-line mr-2"></i> Tariff & Sales Reports</h2>
+            <button onclick="closeReportModal()" class="text-white hover:text-red-400 text-2xl"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="bg-gray-200 p-2 border-b border-gray-300 flex gap-2 items-center flex-wrap">
+            <span class="text-xs font-bold text-gray-700"><i class="fas fa-filter mr-1"></i> FILTERS:</span>
+            <select id="reportFilterCustomerSelect" class="border border-gray-400 rounded px-2 py-1 text-xs text-blue-900 font-bold" onchange="generateMasterReport()"><option value="">All Customers</option></select>
+            <input type="text" id="reportFilterCust" placeholder="Search Exporter..." class="border border-gray-400 rounded px-2 py-1 text-xs text-blue-900 font-bold w-40" oninput="generateMasterReport()">
+            <select id="reportFilterSales" class="border border-gray-400 rounded px-2 py-1 text-xs text-blue-900 font-bold" onchange="generateMasterReport()"><option value="">All Sales Persons</option></select>
+            <select id="reportFilterComm" class="border border-gray-400 rounded px-2 py-1 text-xs text-blue-900 font-bold" onchange="generateMasterReport()"><option value="">All Commodities</option></select>
+            <select id="reportFilterLine" class="border border-gray-400 rounded px-2 py-1 text-xs text-blue-900 font-bold" onchange="generateMasterReport()"><option value="">All Shipping Lines</option></select>
+            <select id="reportFilterType" class="border border-gray-400 rounded px-2 py-1 text-xs text-blue-900 font-bold" onchange="generateMasterReport()"><option value="">All Tariff Types</option></select>
+            <button onclick="resetReportFilters()" class="text-xs text-blue-600 hover:underline ml-2">Reset Filters</button>
+        </div>
+        <div class="bg-gray-100 p-2 border-b border-gray-300 flex gap-2">
+            <button onclick="generateMasterReport()" class="px-4 py-2 bg-blue-600 text-white rounded font-bold text-xs shadow hover:bg-blue-700">Master Tariff Report (Organized)</button>
+            <button onclick="generateExpiryReport()" class="px-4 py-2 bg-red-600 text-white rounded font-bold text-xs shadow hover:bg-red-700">Expiry Watchlist (30 Days)</button>
+            <button onclick="generateSalesSummary()" class="px-4 py-2 bg-green-600 text-white rounded font-bold text-xs shadow hover:bg-green-700">Sales Person Summary</button>
+            <div class="flex-1"></div>
+            <button onclick="exportReportToExcel()" class="px-4 py-2 bg-emerald-700 text-white rounded font-bold text-xs shadow hover:bg-emerald-800"><i class="fas fa-file-excel mr-2"></i> Download Excel</button>
+        </div>
+        <div class="flex-1 overflow-auto p-4 bg-gray-50 text-black" id="reportContent">
+            <p class="text-center text-gray-500 mt-20">Select filters above and click <b>'Master Tariff Report'</b> to view data.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- LOGIN CONFIGURATION ---
+    const AUTH_DB = {
+        "ANURAG PANDEY": "ANURAGP@121",
+        "CHIRAG RANA": "CRANA@122",
+        "MOHIK SHARMA": "HIKSHA@123",
+        "DAMANJIT SINGH": "ANJITSIN@124",
+        "HARSIMRANJEET SINGH": "JEETSINGH@125",
+        "KUNAL SAHI": "NALSAHI@126",
+        "RAJESH KUMAR": "JESHKU@127",
+        "SUMAN KUMARI": "16111980",
+        "VIKAM SINGH": "16111980",
+        "ROHIN KALRA": "ROHINK@3339",
+        "ACCOUNTS": "ACC@8989"
+    };
+
+    // Admins who can see all buttons
+    const ADMIN_USERS = ['SUMAN KUMARI', 'VIKAM SINGH', 'ROHIN KALRA'];
+
+    function attemptLogin() {
+        const user = document.getElementById('loginUser').value;
+        const pass = document.getElementById('loginPass').value;
+        const errDiv = document.getElementById('loginError');
+
+        if (!user) {
+            alert("Please select a user.");
+            return;
+        }
+
+        if (AUTH_DB[user] && AUTH_DB[user] === pass) {
+            // SUCCESS
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('appContent').style.display = 'flex';
+            
+            // Auto-Fill Sales Person
+            const salesDropdown = document.getElementById('salesPerson');
+            if (salesDropdown) {
+                salesDropdown.value = user;
+            }
+            document.getElementById('currentUserDisplay').innerText = user;
+            document.getElementById('preparedByName').innerText = user; // Set Prepared By in Footer
+            
+            // Handle Button Visibility based on Role
+            const isAdmin = ADMIN_USERS.includes(user);
+            document.querySelectorAll('.admin-only').forEach(btn => {
+                if (isAdmin) {
+                    btn.classList.remove('hidden-by-role');
+                } else {
+                    btn.classList.add('hidden-by-role');
+                }
+            });
+
+            // Initialize App
+            fetchSheetData();
+        } else {
+            // FAIL
+            errDiv.classList.remove('hidden');
+            document.getElementById('loginPass').value = '';
+            document.getElementById('loginPass').focus();
+        }
+    }
+
+    // Allow Enter key to submit login
+    document.getElementById('loginPass').addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            attemptLogin();
+        }
+    });
+
+    const CONFIG = {
+        SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzbG1Lg0-gYLmnuXgkgC3f2_L_s1oDJ0tP8J5ryGYWM2o-WfqANSsH_hd2707NHrboD/exec',
+        SHEET_ID: '1iWYD0BShhoVYOx0HLkvs8-fz53JQisjuvARFGpt9hzg'
+    };
+
+    let tableCounter = 0;
+    let customerList = [];
+    let sheetRecords = [];
+    let editingRecordRef = null; 
+
+    const slabs = [
+        { label: '20" 00 MT - 10 MT', p: 30690, m: 10092 }, 
+        { label: '20" 10 MT - 20 MT', p: 38720, m: 12595 }, 
+        { label: '20" 20 MT - 26 MT', p: 46200, m: 14512 }, 
+        { label: '20" 26 MT - 30 MT', p: 50820, m: 15378 }, 
+        { label: '20" Above 30.1 MT', p: 50820, m: 15378 }, 
+        { label: '40" Upto - 20 MT', p: 53790, m: 17275 }, 
+        { label: '40" Over - 20 MT', p: 65890, m: 19425 }
+    ];
+    
+    const subsidyData = { 'FACTORY': [0,0,0,0,0,0,0], 'OWPL': [3200,3200,3200,3200,3200,5600,5600], 'PSWC': [2500,2500,2500,2500,2500,4500,4500], 'ADDITIONAL SUBSIDY': [0,0,0,0,0,0,0] };
+    const lineData = { 'CUSTOMER': { bss:[0,0,0,0,0,0,0], rail:[0,0,0,0,0,0,0], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'MSC': { bss:[933,1161,1335,1414,1414,1548,1744], rail:[500,500,500,500,500,500,500], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'COSCO': { bss:[0,0,0,0,0,0,0], rail:[1490,2120,1900,2320,-2980,2790,2790], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'HAPAG': { bss:[933,1161,1335,1414,1414,1548,1744], rail:[600,600,600,600,600,1200,1200], wh:[2095,2095,2095,2162,4187,2550,2550], fs:[2570,2570,2570,2612,4562,3650,3650], self:[910,910,910,800,2225,700,700] }, 'CMA/ANL': { bss:[933,910,1050,1120,1120,1290,1190], rail:[500,500,500,500,500,1000,1000], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'HMM LINE': { bss:[933,1161,1335,1414,1414,1548,1744], rail:[750,750,750,750,750,1250,1250], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'MAERSK': { bss:[5964,6632,9000,9630,9630,8552,10047], rail:[933,1161,1335,1414,1414,1548,1744], wh:[-1598,-1598,-1598,-923,1102,-1576,-1576], fs:[-1123,-1123,-1123,-473,1477,-476,-476], self:[-2243,-2243,-2243,-1768,-343,-2696,-2696] }, 'DEFAULT': { bss:[0,0,0,0,0,0,0], rail:[0,0,0,0,0,0,0], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] } };
+    ['OOCL','SEABRIDGE','ONE LINE'].forEach(k => lineData[k] = lineData['DEFAULT']);
+
+    document.addEventListener('DOMContentLoaded', () => { 
+        resetForm(true); 
+        // fetchSheetData() moved to after login
+    });
+
+    function filterDropdown() {
+        const input = document.getElementById('searchBox').value.toLowerCase();
+        const select = document.getElementById('cloudHistory');
+        const options = select.getElementsByTagName('option');
+        for (let i = 1; i < options.length; i++) { options[i].style.display = options[i].text.toLowerCase().includes(input) ? "" : "none"; }
+    }
+
+    function filterSidebarList() {
+        const input = document.getElementById('sidebarSearch').value.toLowerCase();
+        const items = document.getElementById('customerList').getElementsByTagName('li');
+        for (let i = 0; i < items.length; i++) { items[i].style.display = items[i].innerText.toLowerCase().includes(input) ? "flex" : "none"; }
+    }
+
+    function loadRecordFromDropdown() {
+        const idx = document.getElementById('cloudHistory').value;
+        if(idx === "-- Load Record --" || idx === "") return; // Changed behavior: no alert on empty, just return
+        loadSelectedRecord(idx);
+    }
+
+    function findAndLoadCustomer(name) {
+        const matches = sheetRecords.filter(r => r.name.trim().toUpperCase() === name.trim().toUpperCase());
+        if (matches.length === 0) {
+            if(confirm(`No saved tariff sheet found for "${name}".\n\nDo you want to use this name for a NEW sheet?`)) { resetForm(true); document.getElementById('customerName').value = name.toUpperCase(); }
+            return;
+        }
+        matches.sort((a, b) => new Date(b.date) - new Date(a.date));
+        const index = sheetRecords.indexOf(matches[0]);
+        if(index !== -1) loadSelectedRecord(index);
+    }
+
+    function captureFullData() {
+        // Ensure Prepared By is captured
+        const preparedByVal = document.getElementById('preparedByName').innerText || document.getElementById('currentUserDisplay').innerText;
+        
+        const basic = {
+            ref: document.getElementById('tariffNo').value,
+            date: document.getElementById('dateToday').value,
+            comm: document.getElementById('commodity').value,
+            cust: document.getElementById('customerName').value,
+            type: document.getElementById('customerType').value,
+            vol: document.getElementById('volMonth').value,
+            cred: document.getElementById('creditDays').value,
+            ver: document.getElementById('salesPerson').value,
+            bill: document.getElementById('billingTerms').value,
+            stream: document.getElementById('stream').value,
+            preparedBy: preparedByVal
+        };
+        const tables = [];
+        document.querySelectorAll('.table-block').forEach(block => {
+            const id = block.id.split('_')[1];
+            const rowData = [];
+            for(let i=0; i<7; i++) {
+                rowData.push({
+                    pub: document.getElementById(`t_${id}_pub_${i}`).value,
+                    railm: document.getElementById(`t_${id}_railm_${i}`).value,
+                    disc: document.getElementById(`t_${id}_disc_${i}`).value,
+                    slr: document.getElementById(`t_${id}_slr_${i}`).value,
+                    slb: document.getElementById(`t_${id}_slb_${i}`).value,
+                    slw: document.getElementById(`t_${id}_slw_${i}`).value,
+                    slf: document.getElementById(`t_${id}_slf_${i}`).value,
+                    sls: document.getElementById(`t_${id}_sls_${i}`).value,
+                    cha: document.getElementById(`t_${id}_cha_${i}`).value,
+                    fwd: document.getElementById(`t_${id}_fwd_${i}`).value,
+                    sub: document.getElementById(`t_${id}_sub_${i}`).value
+                });
+            }
+            tables.push({
+                tt: document.getElementById(`tt_${id}`).value, sl: document.getElementById(`sl_${id}`).value,
+                df: document.getElementById(`df_${id}`).value, dt: document.getElementById(`dt_${id}`).value,
+                rem: document.getElementById(`tbl_rem_${id}`).value, rows: rowData
+            });
+        });
+        const transport = [];
+        document.querySelectorAll('#tbodyTransport tr').forEach(tr => {
+            const inputs = tr.querySelectorAll('input');
+            transport.push({ transporter: inputs[0].value, destination: tr.querySelector('select').value, d20: inputs[1].value, d40: inputs[2].value, remarks: tr.querySelector('textarea').value });
+        });
+        const incentives = [];
+        document.querySelectorAll('#tbodyIncentive tr').forEach(tr => {
+            const inputs = tr.querySelectorAll('input');
+            incentives.push({ line: inputs[0].value, d20: inputs[1].value, d40: inputs[2].value, remarks: tr.querySelector('textarea').value });
+        });
+        return { basic, tables, transport, incentives, remarks: { thc: document.getElementById('remTHC').value, special: document.getElementById('remSpecial').value, add: document.getElementById('remAdd').value }, customers: customerList };
+    }
+
+    async function saveDataToSheet() {
+        if(!document.getElementById('customerName').value) return alert("Customer Name Required!");
+        if(!confirm(`Confirm ${editingRecordRef ? "Update" : "Save"}?`)) return;
+        document.getElementById('loadingOverlay').classList.remove('hidden');
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        const fullData = captureFullData();
+        const payload = new FormData();
+        if (editingRecordRef) { payload.append("action", "edit"); payload.append("originalRef", editingRecordRef); } else { payload.append("action", "save"); }
+        payload.append("ref", fullData.basic.ref);
+        payload.append("name", fullData.basic.cust);
+        payload.append("date", fullData.basic.date);
+        payload.append("jsonData", JSON.stringify(fullData));
+        try {
+            await fetch(CONFIG.SCRIPT_URL, { method: 'POST', body: payload, mode: 'no-cors' });
+            let p = 0;
+            const int = setInterval(()=>{
+                p+=10; document.getElementById('progressBar').style.width=p+'%'; document.getElementById('progressText').innerText=p+'%';
+                if(p>=100) {
+                    clearInterval(int); document.getElementById('progressSection').classList.add('hidden'); document.getElementById('successSection').classList.remove('hidden');
+                    const statusDiv = document.getElementById('mainStatus'); statusDiv.innerText = "Approved & Valid"; statusDiv.className = "input-field h-8 flex items-center justify-center font-bold text-[10px] uppercase rounded border text-center status-valid";
+                    disableAllInputs(true); document.getElementById('saveBtn').classList.add('hidden'); document.getElementById('unlockBtn').classList.remove('hidden'); document.getElementById('addTableBtn').disabled = true; document.getElementById('addTableBtn').classList.add('opacity-50', 'cursor-not-allowed');
+                    editingRecordRef = fullData.basic.ref; fetchSheetData();
+                }
+            }, 200);
+        } catch(e) { alert("Save Error"); console.error(e); closeLoading(); }
+    }
+
+    function fetchSheetData() {
+        document.getElementById('syncStatus').innerText = "Syncing...";
+        window.handleGvizResponse = function(json) {
+            if (!json || !json.table) { document.getElementById('syncStatus').innerText = "Error"; return; }
+            sheetRecords = json.table.rows.map(r => {
+                const c = r.c; if (!c || c.length < 5) return null;
+                return { timestamp: c[0]?.v || "", ref: c[1]?.v || "", name: c[2]?.v || "", date: c[3]?.f || c[3]?.v || "", jsonData: c[4]?.v || "" };
+            }).filter(r => r !== null && r.jsonData);
+            sheetRecords.sort((a, b) => a.name.localeCompare(b.name));
+            const sel = document.getElementById('cloudHistory'); sel.innerHTML = '<option>-- Load Record --</option>';
+            sheetRecords.forEach((row, idx) => { const opt = document.createElement('option'); opt.value = idx; opt.text = row.name; sel.appendChild(opt); });
+            document.getElementById('syncStatus').innerHTML = `<span class="text-green-600">Total Sheets (${sheetRecords.length})</span>`;
+            const oldScript = document.getElementById('gviz_script'); if (oldScript) oldScript.remove(); delete window.handleGvizResponse;
+        };
+        const script = document.createElement('script'); script.id = 'gviz_script';
+        script.src = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=responseHandler:handleGvizResponse&tq=SELECT%20A,B,C,D,E`;
+        script.onerror = function() { document.getElementById('syncStatus').innerText = "Offline"; };
+        document.body.appendChild(script);
+    }
+
+    function loadSelectedRecord(idx) {
+        if(idx === "-- Load Record --") return;
+        const record = sheetRecords[idx];
+        if(!confirm(`Load data for ${record.name}? Current form will be cleared.`)) return;
+        try {
+            resetForm(true); const data = JSON.parse(record.jsonData); editingRecordRef = data.basic.ref;
+            
+            // Handle buttons based on logic
+            const user = document.getElementById('currentUserDisplay').innerText;
+            const isAdmin = ADMIN_USERS.includes(user);
+            
+            if (isAdmin) {
+                document.getElementById('saveBtn').classList.add('hidden'); document.getElementById('unlockBtn').classList.remove('hidden');
+                document.getElementById('addTableBtn').disabled = true; document.getElementById('addTableBtn').classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                 // Non-admins never see save/unlock buttons anyway due to attemptLogin logic
+            }
+            
+            document.getElementById('tariffNo').value = data.basic.ref; document.getElementById('dateToday').value = data.basic.date;
+            document.getElementById('commodity').value = data.basic.comm; document.getElementById('customerName').value = data.basic.cust;
+            document.getElementById('customerType').value = data.basic.type; document.getElementById('volMonth').value = data.basic.vol;
+            document.getElementById('creditDays').value = data.basic.cred; document.getElementById('salesPerson').value = data.basic.ver;
+            document.getElementById('billingTerms').value = data.basic.bill; document.getElementById('stream').value = data.basic.stream;
+            
+            // Set Prepared By if it exists in saved data, else keep current
+            if (data.basic.preparedBy) {
+                document.getElementById('preparedByName').innerText = data.basic.preparedBy;
+            }
+
+            const statusDiv = document.getElementById('mainStatus'); statusDiv.innerText = "Approved & Valid"; statusDiv.className = "input-field h-8 flex items-center justify-center font-bold text-[10px] uppercase rounded border text-center status-valid";
+            document.getElementById('remTHC').value = data.remarks.thc; document.getElementById('remSpecial').value = data.remarks.special; document.getElementById('remAdd').value = data.remarks.add;
+            document.getElementById('tablesContainer').innerHTML = ''; tableCounter = 0;
+            data.tables.forEach(tblData => {
+                addNewTableBlock(); const id = tableCounter;
+                document.getElementById(`tt_${id}`).value = tblData.tt; document.getElementById(`sl_${id}`).value = tblData.sl;
+                document.getElementById(`df_${id}`).value = tblData.df; document.getElementById(`dt_${id}`).value = tblData.dt;
+                document.getElementById(`tbl_rem_${id}`).value = tblData.rem;
+                tblData.rows.forEach((r, i) => {
+                    document.getElementById(`t_${id}_pub_${i}`).value = r.pub; document.getElementById(`t_${id}_railm_${i}`).value = r.railm;
+                    document.getElementById(`t_${id}_disc_${i}`).value = r.disc; document.getElementById(`t_${id}_slr_${i}`).value = r.slr;
+                    document.getElementById(`t_${id}_slb_${i}`).value = r.slb; document.getElementById(`t_${id}_slw_${i}`).value = r.slw;
+                    document.getElementById(`t_${id}_slf_${i}`).value = r.slf; document.getElementById(`t_${id}_sls_${i}`).value = r.sls;
+                    document.getElementById(`t_${id}_cha_${i}`).value = r.cha; document.getElementById(`t_${id}_fwd_${i}`).value = r.fwd;
+                    document.getElementById(`t_${id}_sub_${i}`).value = r.sub;
+                    calcTableRow(id, i);
+                });
+                updateTableValues(id, true);
+            });
+            document.getElementById('tbodyTransport').innerHTML = ''; data.transport.forEach(t => addTransportRow({t: t.transporter, d: t.destination, d20: t.d20, d40: t.d40, rem: t.remarks}));
+            document.getElementById('tbodyIncentive').innerHTML = ''; data.incentives.forEach(i => addIncentiveRow({l: i.line, d20: i.d20, d40: i.d40, rem: i.remarks}));
+            customerList = data.customers || []; renderCustomerList();
+            disableAllInputs(true); alert("Data Loaded in Read-Only Mode.");
+        } catch(e) { console.error(e); alert("Error parsing data."); }
+    }
+
+    function unlockForm() {
+        if (prompt("Enter Password to Edit:") === "4209211") {
+            disableAllInputs(false); document.getElementById('saveBtn').classList.remove('hidden'); document.getElementById('unlockBtn').classList.add('hidden');
+            document.getElementById('saveBtnText').innerText = "UPDATE"; document.getElementById('addTableBtn').disabled = false;
+            document.getElementById('addTableBtn').classList.remove('opacity-50', 'cursor-not-allowed'); alert("Form Unlocked.");
+        } else { alert("Incorrect Password!"); }
+    }
+
+    function disableAllInputs(disabled) {
+        document.querySelectorAll('input, select, textarea').forEach(el => {
+            if (!['searchBox', 'cloudHistory', 'sidebarSearch'].includes(el.id) && !el.id.startsWith('reportFilter')) {
+                el.disabled = disabled; el.classList.toggle('opacity-70', disabled); el.classList.toggle('cursor-not-allowed', disabled);
+            }
+        });
+    }
+
+    function resetForm(skipConfirm=false) {
+        if(!skipConfirm && !confirm("Clear Form?")) return;
+        editingRecordRef = null; 
+        
+        // Button Logic Reset
+        const user = document.getElementById('currentUserDisplay').innerText;
+        const isAdmin = ADMIN_USERS.includes(user);
+        
+        if (isAdmin) {
+             document.getElementById('saveBtn').classList.remove('hidden'); 
+             document.getElementById('unlockBtn').classList.add('hidden');
+             document.getElementById('saveBtnText').innerText = "SAVE NEW"; 
+             document.getElementById('addTableBtn').disabled = false; 
+             document.getElementById('addTableBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        const statusDiv = document.getElementById('mainStatus'); statusDiv.innerText = "-"; statusDiv.className = "input-field h-8 flex items-center justify-center font-bold text-[10px] uppercase rounded border text-center status-pending";
+        disableAllInputs(false); customerList = []; renderCustomerList();
+        document.getElementById('tablesContainer').innerHTML = ''; tableCounter = 0; addNewTableBlock();
+        document.getElementById('tbodyTransport').innerHTML = ''; addTransportRow(); document.getElementById('tbodyIncentive').innerHTML = ''; addIncentiveRow();
+        document.querySelectorAll('input[type="text"], textarea').forEach(i => i.value = '');
+        document.getElementById('tariffNo').value = `TS-${new Date().getFullYear()}${Math.floor(1000+Math.random()*9000)}`;
+        document.getElementById('dateToday').valueAsDate = new Date();
+        document.getElementById('salesPerson').value = ""; document.getElementById('commodity').value = ""; document.getElementById('billingTerms').value = "";
+        document.getElementById('customerType').value = ""; document.getElementById('stream').value = "Mundra - Kilaraipur";
+        
+        // Auto-select logged in user if available
+        const loggedUser = document.getElementById('loginUser').value;
+        if(loggedUser) {
+            const salesDropdown = document.getElementById('salesPerson');
+            // Check if logged user is in sales dropdown options
+            let inList = false;
+            for(let i=0; i<salesDropdown.options.length; i++){
+                if(salesDropdown.options[i].value === loggedUser) inList = true;
+            }
+            if(inList) salesDropdown.value = loggedUser;
+            
+            document.getElementById('preparedByName').innerText = loggedUser;
+        }
+    }
+
+    function closeLoading() { document.getElementById('loadingOverlay').style.display = 'none'; document.getElementById('progressSection').classList.remove('hidden'); document.getElementById('successSection').classList.add('hidden'); document.getElementById('progressBar').style.width = '0%'; }
+
+    function addNewTableBlock() {
+        tableCounter++; const id = tableCounter;
+        const div = document.createElement('div');
+        div.className = "table-block mb-16 border border-gray-600 bg-white pb-4 rounded p-2 shadow-sm";
+        div.id = `tableBlock_${id}`;
+        let rows = '';
+        slabs.forEach((slab, i) => {
+            const isHighlight = slab.label.includes('40" Upto - 20 MT') || slab.label.includes('40" Over - 20 MT');
+            const rowClass = isHighlight ? "highlight-row" : "";
+            rows += `<tr class="${rowClass}">
+                <td class="bg-yellow-100"><input type="text" id="t_${id}_lbl_${i}" class="font-bold text-blue-900 w-full" readonly></td>
+                <td class="font-bold bg-transparent whitespace-nowrap">${slab.label}</td>
+                <td><input type="number" id="t_${id}_pub_${i}" value="${slab.p}" readonly tabindex="-1"></td>
+                <td><input type="number" id="t_${id}_railm_${i}" value="${slab.m}" readonly tabindex="-1"></td>
+                <td><input type="number" id="t_${id}_disc_${i}" value="" oninput="calcTableRow(${id}, ${i})" class="bg-yellow-col"></td>
+                <td><input type="number" id="t_${id}_slr_${i}" value="" readonly tabindex="-1"></td>
+                <td><input type="number" id="t_${id}_slb_${i}" value="" readonly tabindex="-1"></td>
+                <td><input type="number" id="t_${id}_slw_${i}" value="" readonly tabindex="-1"></td>
+                <td><input type="number" id="t_${id}_slf_${i}" value="" readonly tabindex="-1"></td>
+                <td><input type="number" id="t_${id}_sls_${i}" value="" readonly tabindex="-1"></td>
+                <td><input type="number" id="t_${id}_cha_${i}" value="" oninput="calcTableRow(${id}, ${i})" class="bg-teal-col"></td>
+                <td><input type="number" id="t_${id}_fwd_${i}" value="" oninput="calcTableRow(${id}, ${i})" class="bg-teal-col"></td>
+                <td><input type="number" id="t_${id}_sub_${i}" value="" oninput="calcTableRow(${id}, ${i})" class="bg-yellow-col font-bold"></td>
+                <td class="bg-gray-col"><span id="t_${id}_res_w_${i}"></span></td>
+                <td class="bg-gray-col"><span id="t_${id}_res_f_${i}"></span></td>
+                <td class="bg-gray-col"><span id="t_${id}_res_s_${i}"></span></td>
+                <td class="bg-red-col"><span id="t_${id}_res_t_${i}"></span></td>
+            </tr>`;
+        });
+        div.innerHTML = `<div id="headerBox_${id}" class="grid grid-cols-5 gap-4 mb-2 bg-[#1e293b] p-2 rounded border border-gray-800 items-end"><div class="col-span-1 flex flex-col justify-end"><label class="block text-[10px] font-bold text-white uppercase mb-1">Current Status</label><div id="status_${id}" class="px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase status-valid w-full">Approved & Valid</div></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Tariff Type <span class="text-red-400">*</span></label><select id="tt_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-purple-50 text-purple-900 border-purple-300"><option value="">-- Select --</option><option value="FACTORY">FACTORY</option><option value="OWPL">OWPL</option><option value="PSWC">PSWC</option><option value="ADDITIONAL SUBSIDY">ADDITIONAL SUBSIDY</option></select></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Shipping Line <span class="text-red-400">*</span></label><select id="sl_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-white uppercase border-blue-500"><option value="">-- Select --</option>${Object.keys(lineData).map(k => `<option value="${k}">${k}</option>`).join('')}</select></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Effective From</label><input type="date" id="df_${id}" class="input-field h-8 bg-white"></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">End Date</label><input type="date" id="dt_${id}" class="input-field h-8 bg-white" onchange="updateTableValues(${id}, true)"></div></div><div class="mb-2"><textarea id="tbl_rem_${id}" class="w-full border border-black rounded p-1 text-xs bg-yellow-100 font-bold resize-none" rows="2" placeholder="Table specific remarks..."></textarea></div><div class="flex justify-end mb-1"><button onclick="if(confirm('Remove?')) { this.closest('.table-block').remove(); checkExpiryLogic(); }" class="text-red-500 font-bold text-xs hover:underline no-pdf"><i class="fas fa-trash"></i> Remove Table</button></div><div class="overflow-x-auto"><table class="tariff-table border border-gray-600"><thead class="th-main text-white"><tr><th class="w-32">Shipping Line /Tariff Type</th><th class="w-40">Weight Slab Per Container</th><th>Public Tariff</th><th>Rail Margins Including EIC</th><th class="bg-amber-600 border-amber-800">Discount on Railfreight</th><th>S/Line Discount Railfreight</th><th>S/Line Discount BSS</th><th>S/Line Discount WH Stuffing</th><th>S/Line Discount F/S Lock</th><th>S/Line Discount Self Seal</th><th class="bg-emerald-700 border-emerald-800">CHA Incentive</th><th class="bg-emerald-700 border-emerald-800">Forwarder Incentive</th><th>Transport Subsidy</th><th class="bg-slate-700 text-white border-slate-800">HTPL Margins WH</th><th class="bg-slate-700 text-white border-slate-800">HTPL Margins F/S Lock</th><th class="bg-slate-700 text-white border-slate-800">HTPL Margins Self Seal</th><th class="bg-red-700 text-white border-red-900">Revised Billing</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+        document.getElementById('tablesContainer').appendChild(div);
+        updateTableValues(id);
+    }
+
+    function updateTableValues(id, preserve=false) {
+        const type = document.getElementById(`tt_${id}`).value || 'FACTORY';
+        const line = document.getElementById(`sl_${id}`).value || 'DEFAULT';
+        const subArr = subsidyData[type] || subsidyData['FACTORY'];
+        const lineObj = lineData[line] || lineData['DEFAULT'];
+        const setVal = (elId, val) => {
+            const safeVal = (val === undefined || val === null) ? 0 : val;
+            document.getElementById(elId).value = safeVal === 0 ? "" : safeVal;
+        };
+        if(!preserve) {
+            slabs.forEach((_, i) => {
+                setVal(`t_${id}_sub_${i}`, subArr[i]);
+                setVal(`t_${id}_slr_${i}`, lineObj.rail[i]);
+                setVal(`t_${id}_slb_${i}`, lineObj.bss[i]);
+                setVal(`t_${id}_slw_${i}`, lineObj.wh[i]);
+                setVal(`t_${id}_slf_${i}`, lineObj.fs[i]);
+                setVal(`t_${id}_sls_${i}`, lineObj.self[i]);
+            });
+        }
+        slabs.forEach((_, i) => {
+            document.getElementById(`t_${id}_lbl_${i}`).value = `${line}/${type}`;
+            calcTableRow(id, i);
+        });
+        checkExpiryLogic();
+    }
+
+    function checkExpiryLogic() {
+        const blocks = Array.from(document.querySelectorAll('.table-block'));
+        const groups = {};
+        blocks.forEach(block => {
+            const id = block.id.split('_')[1]; const sl = document.getElementById(`sl_${id}`).value; const tt = document.getElementById(`tt_${id}`).value;
+            const key = `${sl}|${tt}`; if (!groups[key]) groups[key] = []; groups[key].push({ id, block });
+        });
+        const todayStr = new Date().toISOString().split('T')[0];
+        for (const key in groups) {
+            const tables = groups[key];
+            tables.forEach((item, index) => {
+                const isLast = index === tables.length - 1; const id = item.id;
+                const endDtVal = document.getElementById(`dt_${id}`).value; const stat = document.getElementById(`status_${id}`); const head = document.getElementById(`headerBox_${id}`);
+                let isExpired = false; let reason = "";
+                if (!isLast) { isExpired = true; reason = "EXPIRED (Replaced)"; } else if (endDtVal && endDtVal < todayStr) { isExpired = true; reason = "EXPIRED (Date)"; }
+                if (isExpired) { stat.innerText = reason; stat.className = "px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase w-full status-expired"; head.classList.remove('bg-[#1e293b]'); head.classList.add('bg-red-800'); } 
+                else { stat.innerText = "Approved & Valid"; stat.className = "px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase w-full status-valid"; head.classList.remove('bg-red-800'); head.classList.add('bg-[#1e293b]'); }
+            });
+        }
+    }
+
+    function calcTableRow(id, i) {
+        const getVal = (key) => parseFloat(document.getElementById(`t_${id}_${key}_${i}`).value) || 0;
+        const railM = getVal('railm'); const disc = getVal('disc');
+        const slr = getVal('slr'); const slb = getVal('slb');
+        const cha = getVal('cha'); const fwd = getVal('fwd'); const sub = getVal('sub');
+        const baseDeductions = disc + slr + slb + cha + fwd + sub;
+        const margWH = railM - baseDeductions - getVal('slw');
+        const margFS = railM - baseDeductions - getVal('slf');
+        const margSelf = railM - baseDeductions - getVal('sls');
+        
+        // --- UPDATED CALCULATION FOR REVISED TARIFF FOR BILLING ---
+        // Formula: Public Tariff - Discount on Railfreight - S/Line Discount Railfreight
+        const bill = getVal('pub') - disc - slr;
+
+        document.getElementById(`t_${id}_res_w_${i}`).innerText = margWH === 0 ? "" : margWH.toFixed(0);
+        document.getElementById(`t_${id}_res_f_${i}`).innerText = margFS === 0 ? "" : margFS.toFixed(0);
+        document.getElementById(`t_${id}_res_s_${i}`).innerText = margSelf === 0 ? "" : margSelf.toFixed(0);
+        document.getElementById(`t_${id}_res_t_${i}`).innerText = bill === 0 ? "" : bill.toLocaleString();
+    }
+
+    function addTransportRow(d={}) { const tr = document.createElement('tr'); const sel = (v,o) => v===o?'selected':''; tr.innerHTML = `<td><input type="text" class="font-bold w-full uppercase" value="${d.transporter||'TRANSPORTER'}"></td><td>Kilaraipur</td><td><select class="font-bold w-full"><option ${sel(d.d,'Ludhiana')}>Ludhiana</option><option ${sel(d.d,'Mandi')}>Mandi</option></select></td><td><input type="number" class="font-bold w-full" value="${d.d20||''}"></td><td><input type="number" class="font-bold w-full" value="${d.d40||''}"></td><td><textarea class="w-full font-bold resize-none" rows="1">${d.rem||''}</textarea></td><td class="no-print"><button onclick="this.closest('tr').remove()" class="text-red-500 no-pdf"><i class="fas fa-times"></i></button></td>`; document.getElementById('tbodyTransport').appendChild(tr); }
+    function addIncentiveRow(d={}) { const tr = document.createElement('tr'); tr.innerHTML = `<td><input type="text" class="font-bold w-full uppercase" value="${d.line||'MSC'}"></td><td><input type="number" class="font-bold w-full" value="${d.d20||''}"></td><td><input type="number" class="font-bold w-full" value="${d.d40||''}"></td><td><textarea class="font-bold w-full resize-none" rows="1">${d.rem||''}</textarea></td><td class="no-print"><button onclick="this.closest('tr').remove()" class="text-red-500 no-pdf"><i class="fas fa-times"></i></button></td>`; document.getElementById('tbodyIncentive').appendChild(tr); }
+    function copyToClipboard() { document.body.style.zoom = "100%"; const e = document.getElementById('printArea'); e.classList.add('pdf-mode'); html2canvas(e, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => { canvas.toBlob(blob => { navigator.clipboard.write([new ClipboardItem({'image/png': blob})]).then(() => { alert("Image Copied to Clipboard!"); document.body.style.zoom = "90%"; e.classList.remove('pdf-mode'); }).catch(err => { alert("Failed to copy image: " + err); document.body.style.zoom = "90%"; e.classList.remove('pdf-mode'); }); }); }).catch(err => { e.classList.remove('pdf-mode'); document.body.style.zoom = "90%"; }); }
+    function downloadPDF() { const e = document.getElementById('printArea'); e.classList.add('pdf-mode'); html2pdf().set({ margin: 5, filename: 'Tariff.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }, pagebreak: { mode: 'avoid-all', avoid: '.table-block' } }).from(e).save().then(() => { e.classList.remove('pdf-mode'); }); }
+    function openCustomerModal() { document.getElementById('customerModal').classList.remove('hidden'); document.getElementById('customerModal').style.display='flex'; }
+    function closeCustomerModal() { document.getElementById('customerModal').classList.add('hidden'); document.getElementById('customerModal').style.display='none'; }
+    function saveBulkCustomers() { const input = document.getElementById('bulkCustomerInput').value; if(input) input.split(',').forEach(n => { if(n.trim() && !customerList.some(c=>c.name===n.trim())) customerList.push({name:n.trim(), date:new Date().toLocaleDateString()}); }); renderCustomerList(); closeCustomerModal(); }
+    function renderCustomerList() { document.getElementById('customerList').innerHTML = customerList.map(c => `<li class="py-1 px-2 border-b text-[10px] flex justify-between customer-item rounded" onclick="findAndLoadCustomer('${c.name}')"><span class="font-bold text-gray-700">${c.name}</span> <span class="text-[9px] text-gray-400">${c.date||''}</span></li>`).join(''); }
+    function openReportModal() { document.getElementById('reportModal').classList.remove('hidden'); document.getElementById('reportModal').style.display = 'flex'; document.getElementById('reportContent').innerHTML = `<p class="text-center text-gray-500 mt-20">Select filters above and click <b>'Master Tariff Report'</b> to view data.</p>`; populateReportFilters(); }
+    function closeReportModal() { document.getElementById('reportModal').classList.add('hidden'); document.getElementById('reportModal').style.display = 'none'; }
+    function populateReportFilters() {
+        const custSelect = document.getElementById('reportFilterCustomerSelect'); const salesFilter = document.getElementById('reportFilterSales'); const commFilter = document.getElementById('reportFilterComm'); const lineFilter = document.getElementById('reportFilterLine'); const typeFilter = document.getElementById('reportFilterType');
+        custSelect.innerHTML = '<option value="">All Customers</option>'; salesFilter.innerHTML = '<option value="">All Sales Persons</option>'; commFilter.innerHTML = '<option value="">All Commodities</option>'; lineFilter.innerHTML = '<option value="">All Shipping Lines</option>'; typeFilter.innerHTML = '<option value="">All Tariff Types</option>';
+        const uniqueCust = new Set(); const uniqueSales = new Set(); const uniqueComm = new Set(); const uniqueLine = new Set(); const uniqueType = new Set();
+        sheetRecords.forEach(rec => { try { const d = JSON.parse(rec.jsonData); if(d.basic.cust) uniqueCust.add(d.basic.cust); if(d.basic.ver) uniqueSales.add(d.basic.ver); if(d.basic.comm) uniqueComm.add(d.basic.comm); if(d.tables) { d.tables.forEach(t => { if(t.sl) uniqueLine.add(t.sl); if(t.tt) uniqueType.add(t.tt); }); } } catch(e){} });
+        Array.from(uniqueCust).sort().forEach(c => custSelect.innerHTML += `<option value="${c}">${c}</option>`); Array.from(uniqueSales).sort().forEach(s => salesFilter.innerHTML += `<option value="${s}">${s}</option>`); Array.from(uniqueComm).sort().forEach(c => commFilter.innerHTML += `<option value="${c}">${c}</option>`); Array.from(uniqueLine).sort().forEach(l => lineFilter.innerHTML += `<option value="${l}">${l}</option>`); Array.from(uniqueType).sort().forEach(t => typeFilter.innerHTML += `<option value="${t}">${t}</option>`);
+    }
+    function resetReportFilters() { document.getElementById('reportFilterCustomerSelect').value = ""; document.getElementById('reportFilterSales').value = ""; document.getElementById('reportFilterComm').value = ""; document.getElementById('reportFilterCust').value = ""; document.getElementById('reportFilterLine').value = ""; document.getElementById('reportFilterType').value = ""; document.getElementById('reportContent').innerHTML = `<p class="text-center text-gray-500 mt-20">Select filters above and click <b>'Master Tariff Report'</b> to view data.</p>`; }
+    function generateMasterReport() {
+        const contentDiv = document.getElementById('reportContent'); if(!contentDiv || sheetRecords.length === 0) return contentDiv.innerHTML = "<p class='p-4 text-gray-800'>No data loaded. Please sync first.</p>";
+        const elCustSelect = document.getElementById('reportFilterCustomerSelect'); const elSales = document.getElementById('reportFilterSales'); const elComm = document.getElementById('reportFilterComm'); const elCust = document.getElementById('reportFilterCust'); const elLine = document.getElementById('reportFilterLine'); const elType = document.getElementById('reportFilterType');
+        const custSelectVal = elCustSelect ? elCustSelect.value : ""; const salesVal = elSales ? elSales.value : ""; const commVal = elComm ? elComm.value : ""; const custVal = elCust ? elCust.value.trim().toLowerCase() : ""; const lineVal = elLine ? elLine.value : ""; const typeVal = elType ? elType.value : "";
+        let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">`; let count = 0;
+        sheetRecords.forEach(rec => {
+            try {
+                const d = JSON.parse(rec.jsonData); if(!d || !d.basic) return;
+                const custJson = d.basic.cust || "UNKNOWN"; const custCol = rec.name || ""; const sales = d.basic.ver || "-"; const comm = d.basic.comm || "";
+                if(custSelectVal && custJson !== custSelectVal) return; if(salesVal && sales !== salesVal) return; if(commVal && comm !== commVal) return;
+                if(custVal) { const matchBasic = (custJson.toLowerCase().includes(custVal)) || (custCol.toLowerCase().includes(custVal)); const matchSidebar = d.customers && Array.isArray(d.customers) && d.customers.some(c => c.name && c.name.toLowerCase().includes(custVal)); if(!matchBasic && !matchSidebar) return; }
+                const validTables = d.tables.filter(tbl => { if (lineVal && tbl.sl !== lineVal) return false; if (typeVal && tbl.tt !== typeVal) return false; return true; });
+                if (validTables.length === 0) return;
+                let transHtml = d.transport.length > 0 ? d.transport.map(t => `<div class="text-[9px] border-b border-orange-200 pb-1 mb-1"><span class="font-bold text-orange-900">${t.transporter}</span> | ${t.destination} | <span class="font-bold">20":${t.d20}</span> | <span class="font-bold">40":${t.d40}</span></div>`).join('') : `<span class="text-[9px] text-gray-400">No Transport</span>`;
+                let incHtml = d.incentives.length > 0 ? d.incentives.map(i => `<div class="text-[9px] border-b border-orange-200 pb-1 mb-1"><span class="font-bold text-orange-900">${i.line}</span> | 20":${i.d20} | 40":${i.d40}</div>`).join('') : `<span class="text-[9px] text-gray-400">No Incentives</span>`;
+                validTables.forEach(tbl => {
+                    count++; const lineType = `${tbl.sl} / ${tbl.tt}`; const endDate = tbl.dt || "N/A";
+                    html += `<div class="report-card bg-white shadow-md border border-orange-300 flex flex-col h-full"><div class="report-header bg-orange-700 text-white p-2 flex justify-between items-start"><div class="flex flex-col overflow-hidden w-3/4"><span class="text-xs font-bold truncate" title="${custJson}">${custJson}</span><span class="text-[10px] opacity-80 truncate">${comm}</span></div><div class="flex flex-col items-end"><span class="bg-orange-900 px-1.5 py-0.5 rounded text-[9px] mb-0.5">${sales}</span><span class="text-[9px] font-bold text-orange-100">${endDate}</span></div></div><div class="bg-orange-100 px-2 py-1 border-b border-orange-200 flex justify-between items-center"><span class="text-xs font-extrabold text-orange-900">${lineType}</span></div><div class="grid grid-cols-2 gap-2 p-2 bg-orange-50 border-b border-orange-200 text-[9px]"><div><strong class="text-orange-800">Transport:</strong><div class="mt-0.5">${transHtml}</div></div><div><strong class="text-orange-800">Incentive:</strong><div class="mt-0.5">${incHtml}</div></div></div><div class="p-2 flex-1 overflow-auto"><table class="report-table w-full text-[9px] text-left border-collapse border border-orange-300"><thead><tr class="bg-orange-200"><th class="p-1 border border-orange-300 text-black font-bold">Slab</th><th class="p-1 border border-orange-300 text-black text-center">Rail</th><th class="p-1 border border-orange-300 text-black text-center">CHA</th><th class="p-1 border border-orange-300 text-black text-center">Fwd</th><th class="p-1 border border-orange-300 text-black text-center font-bold">Sub</th></tr></thead><tbody>`;
+                    tbl.rows.forEach((row, idx) => {
+                        const slabLabel = slabs[idx].label.replace('20" ', '').replace('40" ', '');
+                        let rowClass = ""; const fullLabel = slabs[idx].label; if (fullLabel.includes('40" Over - 20 MT') || fullLabel.includes('40" Upto - 20 MT')) { rowClass = "bg-orange-100 font-semibold"; }
+                        html += `<tr class="${rowClass} border-b border-orange-100 hover:bg-orange-50"><td class="p-1 border-r border-orange-200 whitespace-nowrap">${slabLabel}</td><td class="p-1 border-r border-orange-200 text-center font-bold">${row.disc}</td><td class="p-1 border-r border-orange-200 text-center">${row.cha}</td><td class="p-1 border-r border-orange-200 text-center">${row.fwd}</td><td class="p-1 text-center font-bold text-orange-800">${row.sub}</td></tr>`;
+                    });
+                    html += `</tbody></table></div></div>`;
+                });
+            } catch(e) { console.error("Report Row Error", e); }
+        });
+        html += `</div>`; if (count === 0) html = "<p class='p-4 text-center text-gray-500'>No records found for the selected filters.</p>"; contentDiv.innerHTML = html;
+    }
+    function generateSalesSummary() {
+        if(sheetRecords.length === 0) return; const summary = {};
+        sheetRecords.forEach(rec => { try { const d = JSON.parse(rec.jsonData); const sp = d.basic.ver || "Unknown"; const vol = parseInt(d.basic.vol) || 0; if(!summary[sp]) summary[sp] = { count: 0, vol: 0, customers: [] }; summary[sp].count++; summary[sp].vol += vol; if(!summary[sp].customers.includes(d.basic.cust)) summary[sp].customers.push(d.basic.cust); } catch(e) {} });
+        let html = `<h3 class="text-lg font-bold mb-4 text-black">Sales Person Performance</h3><table class="report-table w-full text-sm border-collapse border border-gray-400" id="salesTable"><thead><tr><th class="p-2 border border-gray-400 bg-gray-200 text-black">Sales Person</th><th class="p-2 border border-gray-400 bg-gray-200 text-black">Total Customers</th><th class="p-2 border border-gray-400 bg-gray-200 text-black">Total Volume (TEUs)</th><th class="p-2 border border-gray-400 bg-gray-200 text-black">Avg Vol/Cust</th></tr></thead><tbody>`;
+        Object.keys(summary).sort().forEach(key => { const row = summary[key]; const avg = row.count > 0 ? (row.vol / row.count).toFixed(0) : 0; html += `<tr><td class="p-2 border border-gray-300 font-bold text-black">${key}</td><td class="p-2 border border-gray-300 text-center text-black">${row.count}</td><td class="p-2 border border-gray-300 text-center bg-blue-50 font-bold text-black">${row.vol}</td><td class="p-2 border border-gray-300 text-center text-black">${avg}</td></tr>`; });
+        html += `</tbody></table>`; document.getElementById('reportContent').innerHTML = html;
+    }
+    function generateExpiryReport() {
+        const today = new Date(); const next30 = new Date(); next30.setDate(today.getDate() + 30);
+        let html = `<h3 class="text-lg font-bold mb-4 text-red-600">Tariffs Expiring Soon (Next 30 Days)</h3><table class="report-table w-full text-sm border-collapse border border-gray-400" id="expiryTable"><thead><tr><th class="p-2 border border-gray-400 bg-gray-200 text-black">Customer</th><th class="p-2 border border-gray-400 bg-gray-200 text-black">Sales Person</th><th class="p-2 border border-gray-400 bg-gray-200 text-black">Line / Type</th><th class="p-2 border border-gray-400 bg-gray-200 text-black">Expiry Date</th><th class="p-2 border border-gray-400 bg-gray-200 text-black">Days Left</th></tr></thead><tbody>`;
+        let found = false;
+        sheetRecords.forEach(rec => { try { const d = JSON.parse(rec.jsonData); d.tables.forEach(tbl => { if(tbl.dt) { const expDate = new Date(tbl.dt); if (expDate >= today && expDate <= next30) { found = true; const diff = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24)); html += `<tr><td class="p-2 border border-gray-300 font-bold text-black">${d.basic.cust}</td><td class="p-2 border border-gray-300 text-black">${d.basic.ver}</td><td class="p-2 border border-gray-300 text-black">${tbl.sl} / ${tbl.tt}</td><td class="p-2 border border-gray-300 font-mono font-bold text-red-600">${tbl.dt}</td><td class="p-2 border border-gray-300 text-center font-bold text-black">${diff} Days</td></tr>`; } } }); } catch(e){} });
+        if(!found) html += `<tr><td colspan="5" class="p-4 text-center text-gray-500">No tariffs expiring in the next 30 days.</td></tr>`; html += `</tbody></table>`; document.getElementById('reportContent').innerHTML = html;
+    }
+    function exportReportToExcel() {
+        if(sheetRecords.length === 0) return alert("Please generate a report first.");
+        const elCustSelect = document.getElementById('reportFilterCustomerSelect'); const elSales = document.getElementById('reportFilterSales'); const elComm = document.getElementById('reportFilterComm'); const elCust = document.getElementById('reportFilterCust'); const elLine = document.getElementById('reportFilterLine'); const elType = document.getElementById('reportFilterType');
+        const custSelectVal = elCustSelect ? elCustSelect.value : ""; const salesVal = elSales ? elSales.value : ""; const commVal = elComm ? elComm.value : ""; const custVal = elCust ? elCust.value.trim().toLowerCase() : ""; const lineVal = elLine ? elLine.value : ""; const typeVal = elType ? elType.value : "";
+        const flatData = []; flatData.push(["Customer Name", "Sales Person", "Commodity", "Ship Line / Tariff", "Weight Slab", "Disc Rail (₹)", "CHA Inc", "Fwd Inc", "Trans Sub", "Transporter", "Trans Disc 20\"", "Trans Disc 40\"", "Incentive Line", "Inc 20\"", "Inc 40\"", "End Date"]);
+        sheetRecords.forEach(rec => {
+            try {
+                const d = JSON.parse(rec.jsonData); if(!d || !d.basic) return;
+                const custJson = d.basic.cust || ""; const custCol = rec.name || ""; const sales = d.basic.ver || ""; const comm = d.basic.comm || "";
+                if(custSelectVal && custJson !== custSelectVal) return; if(salesVal && sales !== salesVal) return; if(commVal && comm !== commVal) return;
+                if(custVal) { const matchBasic = (custJson.toLowerCase().includes(custVal)) || (custCol.toLowerCase().includes(custVal)); const matchSidebar = d.customers && Array.isArray(d.customers) && d.customers.some(c => c.name && c.name.toLowerCase().includes(custVal)); if(!matchBasic && !matchSidebar) return; }
+                let transStr = d.transport.map(t => t.transporter).join(', '); let transD20 = d.transport.map(t => t.d20).join(', '); let transD40 = d.transport.map(t => t.d40).join(', ');
+                let incStr = d.incentives.map(i => i.line).join(', '); let incD20 = d.incentives.map(i => i.d20).join(', '); let incD40 = d.incentives.map(i => i.d40).join(', ');
+                d.tables.forEach(tbl => {
+                    if (lineVal && tbl.sl !== lineVal) return; if (typeVal && tbl.tt !== typeVal) return;
+                    const lineType = `${tbl.sl} / ${tbl.tt}`; const endDate = tbl.dt || "";
+                    tbl.rows.forEach((row, idx) => { const slabLabel = slabs[idx].label; flatData.push([ custJson, sales, comm, lineType, slabLabel, row.disc, row.cha, row.fwd, row.sub, transStr, transD20, transD40, incStr, incD20, incD40, endDate ]); });
+                });
+            } catch(e) { console.error("Export Error", e); }
+        });
+        const ws = XLSX.utils.aoa_to_sheet(flatData); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Master Tariff Report"); XLSX.writeFile(wb, 'Master_Tariff_Report.xlsx');
+    }
+    function sendEmail() {
+        const cust = document.getElementById('customerName').value; if (!cust) return alert("Please load a customer record first.");
+        let endDate = ""; const dateInput = document.querySelector('input[type="date"][id^="dt_"]'); if (dateInput && dateInput.value) { endDate = dateInput.value; } else { endDate = "As per sheet"; }
+        const to = "Sumit.Thakur@hindterminals.com,Sukhwinder.Singh@hindterminals.com,Sourabh.Verma@hindterminals.com";
+        const cc = "Marketing.Ludhiana@hindterminals.com,rajeev.sharma@hindterminals.com,Customerserviceludhiana@hindterminals.com,Siddharth.Nyati@hindterminals.com,Vivek.Srivastava@hindterminals.com,Devender.Sharma@hindterminals.com";
+        const subject = `Cost Sheet - ${cust}`; const body = `Dear Sir,%0D%0A%0D%0APlease find attached tariff sheet of "${cust}" (Valid till: ${endDate})%0D%0A%0D%0AThanks & Regards`;
+        window.location.href = `mailto:${to}?cc=${cc}&subject=${subject}&body=${body}`;
+    }
+</script>
+</body>
+</html>
