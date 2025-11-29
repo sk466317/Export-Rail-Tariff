@@ -61,7 +61,8 @@
 
         /* --- TABLE STYLING --- */
         .tariff-table { width: 100%; border-collapse: collapse; font-size: 0.65rem; table-layout: fixed; font-family: 'Inter', sans-serif; } 
-        .tariff-table th { border: 1px solid #475569; padding: 6px 4px; text-align: center; font-weight: 700; text-transform: uppercase; background-color: #0f172a; color: white; white-space: normal; line-height: 1.2; letter-spacing: 0.5px; }
+        /* 3. Tariff Table Headers Font reduced */
+        .tariff-table th { border: 1px solid #475569; padding: 6px 2px; text-align: center; font-weight: 700; text-transform: uppercase; background-color: #0f172a; color: white; white-space: normal; line-height: 1.1; letter-spacing: 0.5px; font-size: 0.55rem; }
         .tariff-table td { border: 1px solid #64748b; padding: 4px 2px; text-align: center; color: #334155; }
         
         /* CLEAN LOOK: Inputs are blank by default */
@@ -84,8 +85,17 @@
         .bg-red-col { background-color: #fee2e2; color: #dc2626; font-weight: 900; }
 
         .input-field { border: 1px solid #4b5563; border-radius: 4px; padding: 4px 8px; width: 100%; font-size: 0.75rem; background-color: #f3f4f6; color: #111827; font-weight: 700; }
-        .input-field:disabled { background-color: #e5e7eb; color: #6b7280; cursor: not-allowed; }
-
+        
+        /* 1. VISIBILITY: BLUE & BOLD WHEN DISABLED (READ ONLY) */
+        input:disabled, select:disabled, textarea:disabled { 
+    background-color: #fff7ed !important; /* Light Orange/Brown bg */
+    color: #78350f !important; /* DARK BROWN Color */
+    font-weight: 900 !important; 
+    cursor: not-allowed; 
+    border: 1px solid #fdba74 !important;
+    opacity: 1 !important; 
+    -webkit-text-fill-color: #78350f !important;
+}
         .status-valid { background-color: #bbf7d0; color: #14532d; border: 2px solid #15803d; } 
         .status-expired { background-color: #fee2e2; color: #991b1b; border: 2px solid #ef4444; }
         .status-pending { background-color: #f3f4f6; color: #6b7280; border: 2px solid #9ca3af; }
@@ -98,9 +108,9 @@
         .sidebar::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
         .sidebar::-webkit-scrollbar-thumb:hover { background: #555; }
 
-        .customer-item { cursor: pointer; transition: background 0.2s; }
-        .customer-item:hover { background-color: #dbeafe !important; }
-
+        /* 4. Customer List items styling updated in JS, but basic cursor here */
+        .customer-item { cursor: pointer; transition: none; } 
+        
         .report-table th { position: sticky; top: 0; background: #fb923c; color: black; z-index: 10; border: 1px solid #c2410c; }
         .report-table tr:nth-child(even) { background-color: #fff7ed; }
         .report-table tr:hover { background-color: #fed7aa; }
@@ -109,11 +119,18 @@
         #reportContent { color: black !important; }
         #reportContent table { color: black !important; border-color: #c2410c !important; }
         #reportContent td, #reportContent th { border-color: #fdba74 !important; }
+
+        /* 7. Animations */
+        @keyframes drive { from { transform: translateX(-20px); } to { transform: translateX(200px); opacity: 0; } }
+        .truck-anim { animation: drive 4s linear infinite; display: inline-block; color: white; }
+        
+        @keyframes spin { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(360deg); } }
+        .coin-anim { animation: spin 2s linear infinite; display: inline-block; color: gold; }
+
     </style>
 </head>
 <body>
 
-<!-- LOGIN SYSTEM -->
 <div id="login-screen">
     <div class="login-box animate-fade-in-down">
         <div class="text-center mb-6">
@@ -165,7 +182,6 @@
     </div>
 </div>
 
-<!-- MAIN APPLICATION (Initially Hidden) -->
 <div class="main-wrapper" id="appContent" style="display: none;">
     <div class="content-area p-2 md:p-4" id="mainBody">
 
@@ -176,9 +192,10 @@
                     <div class="flex gap-1 items-center">
                         <input type="text" id="searchBox" placeholder="Search Cloud..." class="border border-gray-400 rounded px-2 py-1 text-xs w-64 text-blue-900 font-bold bg-white" onkeyup="filterDropdown()">
                         
-                        <select id="cloudHistory" class="border border-gray-400 rounded px-2 py-1 text-xs w-64 text-blue-900 font-bold bg-blue-50" onchange="loadRecordFromDropdown()">
+                        <select id="cloudHistory" class="border border-gray-400 rounded px-2 py-1 text-xs w-64 text-blue-900 font-bold bg-blue-50">
                             <option>-- Load Record --</option>
                         </select>
+                        <button onclick="loadRecordFromDropdown()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded shadow text-xs font-bold">SHOW</button>
                         
                         <button onclick="fetchSheetData()" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded shadow text-xs font-bold" title="Refresh Data"><i class="fas fa-sync-alt"></i></button>
                     </div>
@@ -187,10 +204,8 @@
                     <div class="text-white text-xs font-bold flex items-center mr-2 bg-gray-700 px-2 rounded">
                         <i class="fas fa-user-circle mr-1"></i> <span id="currentUserDisplay">User</span>
                     </div>
-                    <!-- Reports: Visible to All -->
                     <button onclick="openReportModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded shadow font-bold text-xs"><i class="fas fa-chart-pie mr-1"></i> Reports</button>
                     
-                    <!-- Admin Only Buttons -->
                     <button onclick="sendEmail()" class="admin-only bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded shadow font-bold text-xs"><i class="fas fa-envelope mr-1"></i> Email</button>
                     <button onclick="copyToClipboard()" class="admin-only bg-teal-600 hover:bg-teal-700 text-white px-4 py-1.5 rounded shadow font-bold text-xs border border-teal-500"><i class="fas fa-copy mr-1"></i> Copy Img</button>
                     <button onclick="downloadPDF()" class="admin-only bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded shadow font-bold text-xs"><i class="fas fa-file-pdf mr-1"></i> PDF</button>
@@ -222,13 +237,13 @@
             <div class="grid grid-cols-5 gap-3 mb-4 bg-white p-4 rounded border border-gray-600 shadow-sm">
                 <div class="col-span-1">
                     <label class="block text-[10px] font-bold text-blue-700 uppercase">Commodity <span class="text-red-600">*</span></label>
-                    <select id="commodity" class="input-field h-8 bg-blue-50 border-blue-300 text-blue-900"><option value="">-- Select --</option><option>AGRI COMMODITY</option><option>NON-AGRI COMMODITY</option></select>
+                    <select id="commodity" onchange="checkCommodityColor()" class="input-field h-8 bg-blue-50 border-blue-300 text-blue-900"><option value="">-- Select --</option><option>AGRI COMMODITY</option><option>NON-AGRI COMMODITY</option></select>
                 </div>
                 <div class="col-span-2">
                     <label class="block text-[10px] font-bold text-gray-600 uppercase">Customer Name <span class="text-red-600">*</span></label>
                     <input type="text" id="customerName" oninput="this.value = this.value.toUpperCase()" class="input-field font-bold text-blue-900 h-8 bg-white uppercase border-l-4 border-blue-600" placeholder="ENTER NAME">
                 </div>
-                <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Customer Type <span class="text-red-600">*</span></label><select id="customerType" class="input-field h-8 bg-white uppercase"><option value="">-- Select --</option><option>Importer</option><option>CHA</option><option>Forwarder</option><option>Shipping Line</option><option>Transporter</option></select></div>
+                <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Customer Type <span class="text-red-600">*</span></label><select id="customerType" class="input-field h-8 bg-white uppercase"><option value="">-- Select --</option><option>Shipper</option><option>CHA</option><option>Forwarder</option><option>Shipping Line</option><option>Transporter</option></select></div>
                 <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Vol / Month <span class="text-red-600">*</span></label><input type="text" id="volMonth" class="input-field h-8 bg-white uppercase" placeholder="TEUs"></div>
 
                 <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Credit Days <span class="text-red-600">*</span></label><input type="text" id="creditDays" class="input-field h-8 bg-white" list="creditOpts" placeholder="-- Select --"><datalist id="creditOpts"><option value="- Days"><option value="15 Days"><option value="30 Days"></datalist></div>
@@ -258,7 +273,9 @@
 
             <div class="mb-1 pt-4 border border-gray-600 bg-white p-2 rounded">
                 <div class="flex justify-between items-end mb-1">
-                    <div class="bg-amber-600 text-white px-3 py-1.5 rounded-t font-bold text-xs uppercase"><i class="fas fa-truck mr-2"></i> Transport Tariff</div>
+                    <div class="bg-amber-600 text-white px-3 py-1.5 rounded-t font-bold text-xs uppercase overflow-hidden w-48">
+                         <i class="fas fa-truck truck-anim mr-2"></i> Transport Tariff
+                    </div>
                     <div class="mb-1 flex items-center gap-2">
                         <label class="text-[10px] font-bold text-gray-700 uppercase">Claimed By:</label>
                         <input type="text" class="border border-gray-600 rounded px-2 py-0.5 text-xs font-bold w-80 bg-white uppercase" value="TRANSPORTER">
@@ -273,7 +290,9 @@
 
             <div class="mb-12 pt-2 bg-white p-2 rounded border border-gray-600">
                 <div class="flex justify-between items-end mb-1">
-                    <div class="bg-teal-700 text-white px-3 py-1.5 rounded-t font-bold text-xs uppercase"><i class="fas fa-gift mr-2"></i> Incentive Details</div>
+                    <div class="bg-teal-700 text-white px-3 py-1.5 rounded-t font-bold text-xs uppercase">
+                        <i class="fas fa-coins coin-anim mr-2"></i> Incentive Details
+                    </div>
                     <div class="mb-1 flex items-center gap-2">
                         <label class="text-[10px] font-bold text-gray-700 uppercase">Claimed By:</label>
                         <input type="text" class="border border-gray-600 rounded px-2 py-0.5 text-xs font-bold w-80 bg-white uppercase" value="CHA">
@@ -281,7 +300,7 @@
                     </div>
                 </div>
                 <table class="tariff-table border border-gray-600">
-                    <thead><tr class="text-white" style="background-color: #0d9488;"><th class="w-48">Line</th><th>Discount 20"</th><th>Discount 40"</th><th class="w-64">Remarks</th><th class="bg-white border-none w-6 no-print"></th></tr></thead>
+                    <thead><tr class="text-white" style="background-color: #0d9488;"><th class="w-48">Line</th><th class="w-24">Discount 20"</th><th class="w-24">Discount 40"</th><th class="w-96">Remarks</th><th class="bg-white border-none w-6 no-print"></th></tr></thead>
                     <tbody id="tbodyIncentive"></tbody>
                 </table>
             </div>
@@ -473,13 +492,29 @@
     ];
     
     const subsidyData = { 'FACTORY': [0,0,0,0,0,0,0], 'OWPL': [3200,3200,3200,3200,3200,5600,5600], 'PSWC': [2500,2500,2500,2500,2500,4500,4500], 'ADDITIONAL SUBSIDY': [0,0,0,0,0,0,0] };
-    const lineData = { 'CUSTOMER': { bss:[0,0,0,0,0,0,0], rail:[0,0,0,0,0,0,0], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'MSC': { bss:[933,1161,1335,1414,1414,1548,1744], rail:[500,500,500,500,500,500,500], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'COSCO': { bss:[0,0,0,0,0,0,0], rail:[1490,2120,1900,2320,-2980,2790,2790], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'HAPAG': { bss:[933,1161,1335,1414,1414,1548,1744], rail:[600,600,600,600,600,1200,1200], wh:[2095,2095,2095,2162,4187,2550,2550], fs:[2570,2570,2570,2612,4562,3650,3650], self:[910,910,910,800,2225,700,700] }, 'CMA/ANL': { bss:[933,910,1050,1120,1120,1290,1190], rail:[500,500,500,500,500,1000,1000], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'HMM LINE': { bss:[933,1161,1335,1414,1414,1548,1744], rail:[750,750,750,750,750,1250,1250], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'MAERSK': { bss:[5964,6632,9000,9630,9630,8552,10047], rail:[933,1161,1335,1414,1414,1548,1744], wh:[-1598,-1598,-1598,-923,1102,-1576,-1576], fs:[-1123,-1123,-1123,-473,1477,-476,-476], self:[-2243,-2243,-2243,-1768,-343,-2696,-2696] }, 'DEFAULT': { bss:[0,0,0,0,0,0,0], rail:[0,0,0,0,0,0,0], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] } };
+    const lineData = { 'CUSTOMER': { bss:[0,0,0,0,0,0,0], rail:[0,0,0,0,0,0,0], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'MSC': { bss:[933,1161,1335,1414,1414,1548,1744], rail:[500,500,500,500,500,500,500], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'COSCO': { bss:[0,0,0,0,0,0,0], rail:[1490,2120,1900,2320,-2980,2790,2790], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'HAPAG': { bss:[933,1161,1335,1414,1414,1548,1744], rail:[600,600,600,600,600,1200,1200], wh:[2095,2095,2095,2162,4187,2550,2550], fs:[2570,2570,2570,2612,4562,3650,3650], self:[910,910,910,800,2225,700,700] }, 'CMA CGM': { bss:[933,910,1050,1120,1120,1290,1190], rail:[500,500,500,500,500,1000,1000], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'HMM LINE': { bss:[933,1161,1335,1414,1414,1548,1744], rail:[750,750,750,750,750,1250,1250], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'MAERSK': { bss:[5964,6632,9000,9630,9630,8552,10047], rail:[933,1161,1335,1414,1414,1548,1744], wh:[-1598,-1598,-1598,-923,1102,-1576,-1576], fs:[-1123,-1123,-1123,-473,1477,-476,-476], self:[-2243,-2243,-2243,-1768,-343,-2696,-2696] }, 'DEFAULT': { bss:[0,0,0,0,0,0,0], rail:[0,0,0,0,0,0,0], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] } };
     ['OOCL','SEABRIDGE','ONE LINE'].forEach(k => lineData[k] = lineData['DEFAULT']);
 
     document.addEventListener('DOMContentLoaded', () => { 
         resetForm(true); 
         // fetchSheetData() moved to after login
     });
+
+    // 6. Commodity Color Check Function
+    function checkCommodityColor() {
+        const val = document.getElementById('commodity').value;
+        const el = document.getElementById('commodity');
+        // Reset classes
+        el.classList.remove('bg-yellow-300', 'bg-green-300', 'bg-blue-50');
+        
+        if(val === 'NON-AGRI COMMODITY') {
+            el.classList.add('bg-yellow-300');
+        } else if (val === 'AGRI COMMODITY') {
+             el.classList.add('bg-green-300');
+        } else {
+             el.classList.add('bg-blue-50');
+        }
+    }
 
     function filterDropdown() {
         const input = document.getElementById('searchBox').value.toLowerCase();
@@ -501,6 +536,8 @@
     }
 
     function findAndLoadCustomer(name) {
+        // 4. Do nothing on click visually (already handled by CSS cursor and removal of hover logic in render function)
+        // Just load the data
         const matches = sheetRecords.filter(r => r.name.trim().toUpperCase() === name.trim().toUpperCase());
         if (matches.length === 0) {
             if(confirm(`No saved tariff sheet found for "${name}".\n\nDo you want to use this name for a NEW sheet?`)) { resetForm(true); document.getElementById('customerName').value = name.toUpperCase(); }
@@ -642,6 +679,9 @@
                 document.getElementById('preparedByName').innerText = data.basic.preparedBy;
             }
 
+            // Trigger color check
+            checkCommodityColor();
+
             const statusDiv = document.getElementById('mainStatus'); statusDiv.innerText = "Approved & Valid"; statusDiv.className = "input-field h-8 flex items-center justify-center font-bold text-[10px] uppercase rounded border text-center status-valid";
             document.getElementById('remTHC').value = data.remarks.thc; document.getElementById('remSpecial').value = data.remarks.special; document.getElementById('remAdd').value = data.remarks.add;
             document.getElementById('tablesContainer').innerHTML = ''; tableCounter = 0;
@@ -679,7 +719,9 @@
     function disableAllInputs(disabled) {
         document.querySelectorAll('input, select, textarea').forEach(el => {
             if (!['searchBox', 'cloudHistory', 'sidebarSearch'].includes(el.id) && !el.id.startsWith('reportFilter')) {
-                el.disabled = disabled; el.classList.toggle('opacity-70', disabled); el.classList.toggle('cursor-not-allowed', disabled);
+                el.disabled = disabled; 
+                // Removed opacity-70 logic here because we are handling it with specific CSS for blue/bold
+                el.classList.toggle('cursor-not-allowed', disabled);
             }
         });
     }
@@ -710,6 +752,8 @@
         document.getElementById('salesPerson').value = ""; document.getElementById('commodity').value = ""; document.getElementById('billingTerms').value = "";
         document.getElementById('customerType').value = ""; document.getElementById('stream').value = "Mundra - Kilaraipur";
         
+        checkCommodityColor(); // Reset color
+
         // Auto-select logged in user if available
         const loggedUser = document.getElementById('loginUser').value;
         if(loggedUser) {
@@ -828,14 +872,24 @@
         document.getElementById(`t_${id}_res_t_${i}`).innerText = bill === 0 ? "" : bill.toLocaleString();
     }
 
-    function addTransportRow(d={}) { const tr = document.createElement('tr'); const sel = (v,o) => v===o?'selected':''; tr.innerHTML = `<td><input type="text" class="font-bold w-full uppercase" value="${d.transporter||'TRANSPORTER'}"></td><td>Kilaraipur</td><td><select class="font-bold w-full"><option ${sel(d.d,'Ludhiana')}>Ludhiana</option><option ${sel(d.d,'Mandi')}>Mandi</option></select></td><td><input type="number" class="font-bold w-full" value="${d.d20||''}"></td><td><input type="number" class="font-bold w-full" value="${d.d40||''}"></td><td><textarea class="w-full font-bold resize-none" rows="1">${d.rem||''}</textarea></td><td class="no-print"><button onclick="this.closest('tr').remove()" class="text-red-500 no-pdf"><i class="fas fa-times"></i></button></td>`; document.getElementById('tbodyTransport').appendChild(tr); }
-    function addIncentiveRow(d={}) { const tr = document.createElement('tr'); tr.innerHTML = `<td><input type="text" class="font-bold w-full uppercase" value="${d.line||'MSC'}"></td><td><input type="number" class="font-bold w-full" value="${d.d20||''}"></td><td><input type="number" class="font-bold w-full" value="${d.d40||''}"></td><td><textarea class="font-bold w-full resize-none" rows="1">${d.rem||''}</textarea></td><td class="no-print"><button onclick="this.closest('tr').remove()" class="text-red-500 no-pdf"><i class="fas fa-times"></i></button></td>`; document.getElementById('tbodyIncentive').appendChild(tr); }
+    // 2. Remarks Box Double Size (rows="2")
+    function addTransportRow(d={}) { const tr = document.createElement('tr'); const sel = (v,o) => v===o?'selected':''; tr.innerHTML = `<td><input type="text" class="font-bold w-full uppercase" value="${d.transporter||'TRANSPORTER'}"></td><td>Kilaraipur</td><td><select class="font-bold w-full"><option ${sel(d.d,'Ludhiana')}>Ludhiana</option><option ${sel(d.d,'Mandi')}>Mandi</option></select></td><td><input type="number" class="font-bold w-full" value="${d.d20||''}"></td><td><input type="number" class="font-bold w-full" value="${d.d40||''}"></td><td><textarea class="w-full font-bold resize-none" rows="2">${d.rem||''}</textarea></td><td class="no-print"><button onclick="this.closest('tr').remove()" class="text-red-500 no-pdf"><i class="fas fa-times"></i></button></td>`; document.getElementById('tbodyTransport').appendChild(tr); }
+    // 2. Remarks Box Double Size (rows="2")
+    function addIncentiveRow(d={}) { const tr = document.createElement('tr'); tr.innerHTML = `<td><input type="text" class="font-bold w-full uppercase" value="${d.line||'MSC'}"></td><td><input type="number" class="font-bold w-full" value="${d.d20||''}"></td><td><input type="number" class="font-bold w-full" value="${d.d40||''}"></td><td><textarea class="font-bold w-full resize-none" rows="2">${d.rem||''}</textarea></td><td class="no-print"><button onclick="this.closest('tr').remove()" class="text-red-500 no-pdf"><i class="fas fa-times"></i></button></td>`; document.getElementById('tbodyIncentive').appendChild(tr); }
     function copyToClipboard() { document.body.style.zoom = "100%"; const e = document.getElementById('printArea'); e.classList.add('pdf-mode'); html2canvas(e, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => { canvas.toBlob(blob => { navigator.clipboard.write([new ClipboardItem({'image/png': blob})]).then(() => { alert("Image Copied to Clipboard!"); document.body.style.zoom = "90%"; e.classList.remove('pdf-mode'); }).catch(err => { alert("Failed to copy image: " + err); document.body.style.zoom = "90%"; e.classList.remove('pdf-mode'); }); }); }).catch(err => { e.classList.remove('pdf-mode'); document.body.style.zoom = "90%"; }); }
     function downloadPDF() { const e = document.getElementById('printArea'); e.classList.add('pdf-mode'); html2pdf().set({ margin: 5, filename: 'Tariff.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }, pagebreak: { mode: 'avoid-all', avoid: '.table-block' } }).from(e).save().then(() => { e.classList.remove('pdf-mode'); }); }
     function openCustomerModal() { document.getElementById('customerModal').classList.remove('hidden'); document.getElementById('customerModal').style.display='flex'; }
     function closeCustomerModal() { document.getElementById('customerModal').classList.add('hidden'); document.getElementById('customerModal').style.display='none'; }
     function saveBulkCustomers() { const input = document.getElementById('bulkCustomerInput').value; if(input) input.split(',').forEach(n => { if(n.trim() && !customerList.some(c=>c.name===n.trim())) customerList.push({name:n.trim(), date:new Date().toLocaleDateString()}); }); renderCustomerList(); closeCustomerModal(); }
-    function renderCustomerList() { document.getElementById('customerList').innerHTML = customerList.map(c => `<li class="py-1 px-2 border-b text-[10px] flex justify-between customer-item rounded" onclick="findAndLoadCustomer('${c.name}')"><span class="font-bold text-gray-700">${c.name}</span> <span class="text-[9px] text-gray-400">${c.date||''}</span></li>`).join(''); }
+    
+    // 4. Update Render Customer List (Orange Strips)
+    function renderCustomerList() { 
+        document.getElementById('customerList').innerHTML = customerList.map((c, index) => {
+            const bgClass = index % 2 === 0 ? 'bg-orange-200' : 'bg-orange-50';
+            return `<li class="py-1 px-2 border-b text-[10px] flex justify-between customer-item rounded ${bgClass}" onclick="findAndLoadCustomer('${c.name}')"><span class="font-bold text-gray-700">${c.name}</span> <span class="text-[9px] text-gray-400">${c.date||''}</span></li>`;
+        }).join(''); 
+    }
+    
     function openReportModal() { document.getElementById('reportModal').classList.remove('hidden'); document.getElementById('reportModal').style.display = 'flex'; document.getElementById('reportContent').innerHTML = `<p class="text-center text-gray-500 mt-20">Select filters above and click <b>'Master Tariff Report'</b> to view data.</p>`; populateReportFilters(); }
     function closeReportModal() { document.getElementById('reportModal').classList.add('hidden'); document.getElementById('reportModal').style.display = 'none'; }
     function populateReportFilters() {
