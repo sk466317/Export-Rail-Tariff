@@ -8,6 +8,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- EmailJS Library Added -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
@@ -88,14 +90,14 @@
         
         /* 1. VISIBILITY: BLUE & BOLD WHEN DISABLED (READ ONLY) */
         input:disabled, select:disabled, textarea:disabled { 
-    background-color: #fff7ed !important; /* Light Orange/Brown bg */
-    color: #78350f !important; /* DARK BROWN Color */
-    font-weight: 900 !important; 
-    cursor: not-allowed; 
-    border: 1px solid #fdba74 !important;
-    opacity: 1 !important; 
-    -webkit-text-fill-color: #78350f !important;
-}
+            background-color: #fff7ed !important; /* Light Orange/Brown bg */
+            color: #78350f !important; /* DARK BROWN Color */
+            font-weight: 900 !important; 
+            cursor: not-allowed; 
+            border: 1px solid #fdba74 !important;
+            opacity: 1 !important; 
+            -webkit-text-fill-color: #78350f !important;
+        }
         .status-valid { background-color: #bbf7d0; color: #14532d; border: 2px solid #15803d; } 
         .status-expired { background-color: #fee2e2; color: #991b1b; border: 2px solid #ef4444; }
         .status-pending { background-color: #f3f4f6; color: #6b7280; border: 2px solid #9ca3af; }
@@ -144,6 +146,7 @@
         <div class="space-y-4">
             <div>
                 <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Select User</label>
+                <!-- This dropdown serves both Login and Forgot Password -->
                 <select id="loginUser" class="w-full border-2 border-gray-300 rounded p-2 text-sm font-bold text-blue-900 focus:border-blue-500 focus:outline-none bg-gray-50">
                     <option value="">-- Select Identity --</option>
                     <option value="ANURAG PANDEY">ANURAG PANDEY</option>
@@ -154,7 +157,7 @@
                     <option value="KUNAL SAHI">KUNAL SAHI</option>
                     <option value="RAJESH KUMAR">RAJESH KUMAR</option>
                     <option value="SUMAN KUMARI">SUMAN KUMARI</option>
-                    <option value="VIKAM SINGH">VIKAM SINGH</option>
+                    <option value="VIKRAM SINGH">VIKRAM SINGH</option>
                     <option value="ROHIN KALRA">ROHIN KALRA</option>
                     <option value="ACCOUNTS">ACCOUNTS</option>
                 </select>
@@ -172,6 +175,14 @@
                 Secure Login <i class="fas fa-arrow-right ml-2"></i>
             </button>
             
+            <!-- Direct Forgot Password Button -->
+            <div class="text-center pt-2 border-t border-gray-200 mt-2">
+                <p class="text-[10px] text-gray-500 mb-1">Forgot Password?</p>
+                <button onclick="handleForgotPassword()" id="forgotBtn" class="w-full bg-white border border-orange-500 text-orange-600 hover:bg-orange-50 font-bold py-1.5 rounded shadow-sm text-xs uppercase flex items-center justify-center">
+                    <i class="fas fa-envelope mr-2"></i> Email My Password
+                </button>
+            </div>
+
             <div id="loginError" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-2 text-xs font-bold mt-2 text-center">
                 <i class="fas fa-exclamation-circle mr-1"></i> Invalid Password. Try Again.
             </div>
@@ -259,7 +270,7 @@
                         <option>KUNAL SAHI</option>
                         <option>RAJESH KUMAR</option>
                         <option>SUMAN KUMARI</option>
-                        <option>VIKAM SINGH</option>
+                        <option>VIKRAM SINGH</option>
                         <option>ROHIN KALRA</option>
                     </select>
                 </div>
@@ -403,23 +414,33 @@
 </div>
 
 <script>
-    // --- LOGIN CONFIGURATION ---
-    const AUTH_DB = {
-        "ANURAG PANDEY": "ANURAGP@121",
-        "CHIRAG RANA": "CRANA@122",
-        "MOHIK SHARMA": "HIKSHA@123",
-        "DAMANJIT SINGH": "ANJITSIN@124",
-        "HARSIMRANJEET SINGH": "JEETSINGH@125",
-        "KUNAL SAHI": "NALSAHI@126",
-        "RAJESH KUMAR": "JESHKU@127",
-        "SUMAN KUMARI": "16111980",
-        "VIKAM SINGH": "16111980",
-        "ROHIN KALRA": "ROHINK@3339",
-        "ACCOUNTS": "ACC@8989"
+    // --- 1. CONFIGURATION & DATABASE (Combined) ---
+    // Initialize EmailJS
+    const PUBLIC_KEY = "Hb0oU56d79ASV96Nh"; // Your provided public key
+    const SERVICE_ID = "service_kqh6am4";   
+    const TEMPLATE_ID = "template_bwpw6sk"; 
+
+    (function(){
+        emailjs.init(PUBLIC_KEY);
+    })();
+
+    // Unified User Database (Password + Email)
+    const USER_DATABASE = {
+        "ANURAG PANDEY":       { pass: "ANURAGP@121", email: "Anurag.Pandey@hindterminals.com" },
+        "CHIRAG RANA":         { pass: "CRANA@122",   email: "Chirag.Rana@hindterminals.com" },
+        "MOHIK SHARMA":        { pass: "HIKSHA@123",  email: "Mohik.Sharma@hindterminals.com" },
+        "DAMANJIT SINGH":      { pass: "ANJITSIN@124",email: "Damanjit.Singh@hindterminals.com" },
+        "HARSIMRANJEET SINGH": { pass: "JEETSINGH@125",email: "Harsimranjeet.Singh@hindterminals.com" },
+        "KUNAL SAHI":          { pass: "NALSAHI@126", email: "Kunal.sahi@hindterminals.com" },
+        "RAJESH KUMAR":        { pass: "JESHKU@127",  email: "rajesh.kumar@hindterminals.com" },
+        "ROHIN KALRA":         { pass: "ROHINK@3339", email: "rohin.kalra@hindterminals.com" },
+        "ACCOUNTS":            { pass: "ACC@8989",    email: "sumit.thakur@hindterminals.com" },
+        "SUMAN KUMARI":        { pass: "16111980",    email: "Suman.kumari@hindterminals.com" },
+        "VIKRAM SINGH":        { pass: "16111980",    email: "Vikram.singh@hindterminals.com" }
     };
 
     // Admins who can see all buttons
-    const ADMIN_USERS = ['SUMAN KUMARI', 'VIKAM SINGH', 'ROHIN KALRA'];
+    const ADMIN_USERS = ['SUMAN KUMARI', 'VIKRAM SINGH', 'ROHIN KALRA'];
 
     function attemptLogin() {
         const user = document.getElementById('loginUser').value;
@@ -431,7 +452,8 @@
             return;
         }
 
-        if (AUTH_DB[user] && AUTH_DB[user] === pass) {
+        // Check against the Unified Database
+        if (USER_DATABASE[user] && USER_DATABASE[user].pass === pass) {
             // SUCCESS
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('appContent').style.display = 'flex';
@@ -462,6 +484,55 @@
             document.getElementById('loginPass').value = '';
             document.getElementById('loginPass').focus();
         }
+    }
+
+    // --- 2. HANDLE FORGOT PASSWORD (Direct Integration) ---
+    function handleForgotPassword() {
+        // Use the SAME dropdown used for login
+        const selectedUser = document.getElementById("loginUser").value;
+        const btn = document.getElementById("forgotBtn");
+
+        if(!selectedUser) {
+            alert("Please Select your User Identity from the list above first.");
+            document.getElementById("loginUser").focus();
+            return;
+        }
+
+        const userData = USER_DATABASE[selectedUser];
+        
+        if(!userData) {
+            alert("Error: User data not found for selected user.");
+            return;
+        }
+
+        if(!confirm(`Send password for "${selectedUser}" to email:\n${userData.email}?`)) {
+            return;
+        }
+
+        // Button loading state
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Sending...';
+        btn.disabled = true;
+
+        var templateParams = {
+            name: selectedUser,        
+            to_name: selectedUser,     
+            to_email: userData.email,   
+            password: userData.pass     
+        };
+
+        emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams)
+            .then(function(response) {
+                console.log('SUCCESS!', response.status, response.text);
+                alert(`✅ Password sent successfully to:\n${userData.email}`);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }, function(error) {
+                console.log('FAILED...', error);
+                alert("❌ Failed to send email. Check API limits or Connection.");
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
     }
 
     // Allow Enter key to submit login
