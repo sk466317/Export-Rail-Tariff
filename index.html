@@ -129,6 +129,32 @@
         @keyframes spin { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(360deg); } }
         .coin-anim { animation: spin 2s linear infinite; display: inline-block; color: gold; }
 
+        /* --- 1. NEW UPLOAD STYLES (GREEN & HALF SIZE) --- */
+        .upload-section-mini { 
+            background: #d1fae5; /* Green-100 */
+            border: 1px solid #34d399; /* Green-400 */
+            padding: 8px; 
+            border-radius: 6px; 
+            margin-bottom: 10px; 
+            width: 50%; /* Half Size */
+        }
+        .upload-box-mini { 
+            border: 2px dashed #059669; /* Green-600 */
+            background: #ecfdf5; /* Green-50 */
+            padding: 8px; 
+            text-align: center; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            transition: 0.2s; 
+        }
+        .upload-box-mini:hover { background: #d1fae5; }
+        
+        /* Upload Preview Modal */
+        #docPreviewModal { display: none; position: fixed; z-index: 5000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center; }
+        .doc-modal-content { background-color: #fff; padding: 20px; width: 90%; max-width: 600px; text-align: center; border-radius: 8px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .close-doc-btn { position: absolute; top: 10px; right: 20px; font-size: 24px; font-weight: bold; cursor: pointer; color: #555; }
+        #docModalImage { max-width: 100%; max-height: 400px; border: 1px solid #ddd; margin-top: 10px; display: block; margin-left: auto; margin-right: auto; }
+
     </style>
 </head>
 <body>
@@ -146,7 +172,6 @@
         <div class="space-y-4">
             <div>
                 <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Select User</label>
-                <!-- This dropdown serves both Login and Forgot Password -->
                 <select id="loginUser" class="w-full border-2 border-gray-300 rounded p-2 text-sm font-bold text-blue-900 focus:border-blue-500 focus:outline-none bg-gray-50">
                     <option value="">-- Select Identity --</option>
                     <option value="ANURAG PANDEY">ANURAG PANDEY</option>
@@ -169,20 +194,15 @@
                     <input type="password" id="loginPass" class="w-full border-2 border-gray-300 rounded p-2 text-sm font-bold text-blue-900 focus:border-blue-500 focus:outline-none pl-8" placeholder="Enter Password">
                     <i class="fas fa-lock absolute left-3 top-3 text-gray-400 text-xs"></i>
                 </div>
+                <div class="text-right mt-2">
+                    <a href="#" onclick="openForgotModal()" id="forgotBtn" class="text-xs text-orange-600 hover:text-orange-800 font-bold underline">Forgot Password?</a>
+                </div>
             </div>
 
             <button onclick="attemptLogin()" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded shadow transition duration-200 uppercase text-sm">
                 Secure Login <i class="fas fa-arrow-right ml-2"></i>
             </button>
             
-            <!-- Direct Forgot Password Button -->
-            <div class="text-center pt-2 border-t border-gray-200 mt-2">
-                <p class="text-[10px] text-gray-500 mb-1">Forgot Password?</p>
-                <button onclick="handleForgotPassword()" id="forgotBtn" class="w-full bg-white border border-orange-500 text-orange-600 hover:bg-orange-50 font-bold py-1.5 rounded shadow-sm text-xs uppercase flex items-center justify-center">
-                    <i class="fas fa-envelope mr-2"></i> Email My Password
-                </button>
-            </div>
-
             <div id="loginError" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-2 text-xs font-bold mt-2 text-center">
                 <i class="fas fa-exclamation-circle mr-1"></i> Invalid Password. Try Again.
             </div>
@@ -192,6 +212,13 @@
         </div>
     </div>
 </div>
+
+<!-- Modal for Forgot Password Logic -->
+<script>
+    function openForgotModal() {
+       handleForgotPassword();
+    }
+</script>
 
 <div class="main-wrapper" id="appContent" style="display: none;">
     <div class="content-area p-2 md:p-4" id="mainBody">
@@ -252,7 +279,7 @@
                 </div>
                 <div class="col-span-2">
                     <label class="block text-[10px] font-bold text-gray-600 uppercase">Customer Name <span class="text-red-600">*</span></label>
-                    <input type="text" id="customerName" oninput="this.value = this.value.toUpperCase()" class="input-field font-bold text-blue-900 h-8 bg-white uppercase border-l-4 border-blue-600" placeholder="ENTER NAME">
+                    <input type="text" id="customerName" oninput="this.value = this.value.toUpperCase();" class="input-field font-bold text-blue-900 h-8 bg-white uppercase border-l-4 border-blue-600" placeholder="ENTER NAME">
                 </div>
                 <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Customer Type <span class="text-red-600">*</span></label><select id="customerType" class="input-field h-8 bg-white uppercase"><option value="">-- Select --</option><option>Shipper</option><option>CHA</option><option>Forwarder</option><option>Shipping Line</option><option>Transporter</option></select></div>
                 <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Vol / Month <span class="text-red-600">*</span></label><input type="text" id="volMonth" class="input-field h-8 bg-white uppercase" placeholder="TEUs"></div>
@@ -357,7 +384,10 @@
         </div>
     </div>
 
-</div> <div id="loadingOverlay" class="overlay hidden" style="background: rgba(0,0,0,0.8);">
+</div> 
+
+<!-- LOADING OVERLAY -->
+<div id="loadingOverlay" class="overlay hidden" style="background: rgba(0,0,0,0.8);">
     <div class="bg-white p-6 rounded shadow-xl w-96 border border-gray-300 text-center">
         <div id="progressSection"> 
             <div class="mb-4"><div class="animate-spin rounded-full h-10 w-10 border-b-4 border-blue-600 mx-auto"></div></div>
@@ -369,6 +399,23 @@
             <div class="mb-3 text-green-500 text-6xl animate-bounce"><i class="fas fa-check-circle"></i></div>
             <h2 class="text-xl font-extrabold text-gray-800 mb-4">Saved Successfully!</h2>
             <button onclick="closeLoading()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full shadow outline-none">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- DOCUMENT PREVIEW MODAL -->
+<div id="docPreviewModal" class="hidden">
+    <div class="doc-modal-content">
+        <span class="close-doc-btn" onclick="closeDocModal()">&times;</span>
+        <h3 class="text-lg font-bold text-blue-900 border-b border-gray-300 pb-2 mb-2">Document Preview</h3>
+        <div id="docModalBody"></div> 
+        <div class="mt-4 flex justify-center gap-2">
+            <a id="fullDocLink" href="#" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-blue-700">
+                <i class="fas fa-external-link-alt mr-1"></i> Open Original
+            </a>
+            <a id="downloadDocLink" href="#" class="bg-orange-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-orange-700">
+                <i class="fas fa-download mr-1"></i> Download
+            </a>
         </div>
     </div>
 </div>
@@ -542,6 +589,97 @@
         }
     });
 
+    // --- 3. CLOUDINARY UPLOAD LOGIC (Dynamic) ---
+    const cloudName = "drbrz3rqv"; 
+    const uploadPreset = "ml_default";
+    
+    function triggerUpload(id) {
+        document.getElementById(`fileInput_${id}`).click();
+    }
+
+    function uploadToCloudinary(input, id) {
+        const file = input.files[0];
+        const statusText = document.getElementById(`uploadStatus_${id}`);
+        const hiddenInput = document.getElementById(`docLink_${id}`);
+        const previewBtn = document.getElementById(`previewBtn_${id}`);
+
+        if (!file) return;
+
+        statusText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        statusText.className = "text-xs font-bold text-blue-600";
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", uploadPreset);
+
+        fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.secure_url) {
+                hiddenInput.value = data.secure_url; // Save to hidden input
+                statusText.innerHTML = `✅ <b>${file.name}</b>`;
+                statusText.className = "text-xs font-bold text-green-600";
+                
+                previewBtn.classList.remove("hidden");
+                alert("✅ Document Uploaded for this table!");
+            } else {
+                statusText.innerText = "❌ Upload Failed";
+                statusText.className = "text-xs font-bold text-red-600";
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            statusText.innerText = "❌ Network Error";
+            statusText.className = "text-xs font-bold text-red-600";
+        });
+    }
+
+    function openDocModal(id) {
+        const modal = document.getElementById("docPreviewModal");
+        const modalBody = document.getElementById("docModalBody");
+        const link = document.getElementById(`docLink_${id}`).value;
+        const fullLinkBtn = document.getElementById("fullDocLink");
+        const downloadBtn = document.getElementById("downloadDocLink");
+
+        if (!link) return alert("No document found to preview.");
+
+        // 1. Basic Links
+        fullLinkBtn.href = link; 
+        
+        // 2. Download Link (Cloudinary attachment flag)
+        let downloadUrl = link;
+        if (link.includes("/upload/")) {
+            const parts = link.split("/upload/");
+            downloadUrl = parts[0] + "/upload/fl_attachment/" + parts[1];
+        }
+        downloadBtn.href = downloadUrl;
+
+        // 3. Preview Logic
+        modalBody.innerHTML = "";
+        let previewUrl = link;
+
+        // Simple check for PDF vs Image
+        if (link.toLowerCase().endsWith(".pdf")) {
+            if (link.includes("/upload/")) {
+                const parts = link.split("/upload/");
+                previewUrl = parts[0] + "/upload/w_600,pg_1,f_jpg/" + parts[1];
+                if(previewUrl.toLowerCase().endsWith(".pdf")) {
+                     previewUrl = previewUrl.substring(0, previewUrl.length - 4) + ".jpg";
+                }
+            }
+        }
+
+        modalBody.innerHTML = `<img src="${previewUrl}" id="docModalImage" alt="Loading Preview..." onerror="this.onerror=null;this.src='https://via.placeholder.com/400x300?text=Preview+Not+Available';">`;
+        modal.style.display = "flex";
+    }
+
+    function closeDocModal() {
+        document.getElementById("docPreviewModal").style.display = "none";
+    }
+
     const CONFIG = {
         SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzbG1Lg0-gYLmnuXgkgC3f2_L_s1oDJ0tP8J5ryGYWM2o-WfqANSsH_hd2707NHrboD/exec',
         SHEET_ID: '1iWYD0BShhoVYOx0HLkvs8-fz53JQisjuvARFGpt9hzg'
@@ -637,6 +775,8 @@
             preparedBy: preparedByVal
         };
         const tables = [];
+        const docLinksArray = []; // To store all links for Column F
+
         document.querySelectorAll('.table-block').forEach(block => {
             const id = block.id.split('_')[1];
             const rowData = [];
@@ -655,10 +795,16 @@
                     sub: document.getElementById(`t_${id}_sub_${i}`).value
                 });
             }
+            
+            // Grab the link for this table
+            const linkVal = document.getElementById(`docLink_${id}`).value;
+            if(linkVal) docLinksArray.push(linkVal);
+
             tables.push({
                 tt: document.getElementById(`tt_${id}`).value, sl: document.getElementById(`sl_${id}`).value,
                 df: document.getElementById(`df_${id}`).value, dt: document.getElementById(`dt_${id}`).value,
-                rem: document.getElementById(`tbl_rem_${id}`).value, rows: rowData
+                rem: document.getElementById(`tbl_rem_${id}`).value, rows: rowData,
+                docLink: linkVal // Save individual link inside table object
             });
         });
         const transport = [];
@@ -671,7 +817,14 @@
             const inputs = tr.querySelectorAll('input');
             incentives.push({ line: inputs[0].value, d20: inputs[1].value, d40: inputs[2].value, remarks: tr.querySelector('textarea').value });
         });
-        return { basic, tables, transport, incentives, remarks: { thc: document.getElementById('remTHC').value, special: document.getElementById('remSpecial').value, add: document.getElementById('remAdd').value }, customers: customerList };
+        
+        // Return object with combined document link for Column F (comma separated)
+        return { 
+            basic, tables, transport, incentives, 
+            remarks: { thc: document.getElementById('remTHC').value, special: document.getElementById('remSpecial').value, add: document.getElementById('remAdd').value }, 
+            customers: customerList,
+            docLink: docLinksArray.join(', ') // All links in Column F
+        };
     }
 
     async function saveDataToSheet() {
@@ -686,6 +839,9 @@
         payload.append("name", fullData.basic.cust);
         payload.append("date", fullData.basic.date);
         payload.append("jsonData", JSON.stringify(fullData));
+        // Add docLink for Column F
+        payload.append("docLink", fullData.docLink);
+
         try {
             await fetch(CONFIG.SCRIPT_URL, { method: 'POST', body: payload, mode: 'no-cors' });
             let p = 0;
@@ -694,7 +850,15 @@
                 if(p>=100) {
                     clearInterval(int); document.getElementById('progressSection').classList.add('hidden'); document.getElementById('successSection').classList.remove('hidden');
                     const statusDiv = document.getElementById('mainStatus'); statusDiv.innerText = "Approved & Valid"; statusDiv.className = "input-field h-8 flex items-center justify-center font-bold text-[10px] uppercase rounded border text-center status-valid";
-                    disableAllInputs(true); document.getElementById('saveBtn').classList.add('hidden'); document.getElementById('unlockBtn').classList.remove('hidden'); document.getElementById('addTableBtn').disabled = true; document.getElementById('addTableBtn').classList.add('opacity-50', 'cursor-not-allowed');
+                    
+                    disableAllInputs(true); 
+                    document.getElementById('saveBtn').classList.add('hidden'); 
+                    document.getElementById('unlockBtn').classList.remove('hidden'); 
+                    
+                    // --- REVERT: DISABLE ADD TABLE BUTTON ON SAVE (ORIGINAL LOGIC) ---
+                    document.getElementById('addTableBtn').disabled = true; 
+                    document.getElementById('addTableBtn').classList.add('opacity-50', 'cursor-not-allowed');
+                    
                     editingRecordRef = fullData.basic.ref; fetchSheetData();
                 }
             }, 200);
@@ -707,8 +871,16 @@
             if (!json || !json.table) { document.getElementById('syncStatus').innerText = "Error"; return; }
             sheetRecords = json.table.rows.map(r => {
                 const c = r.c; if (!c || c.length < 5) return null;
-                return { timestamp: c[0]?.v || "", ref: c[1]?.v || "", name: c[2]?.v || "", date: c[3]?.f || c[3]?.v || "", jsonData: c[4]?.v || "" };
-            }).filter(r => r !== null && r.jsonData);
+                const jData = c[4]?.v || "";
+                
+                // --- FIX: VALIDATION ADDED HERE ---
+                if (!jData || typeof jData !== 'string' || !jData.trim().startsWith('{')) {
+                    return null;
+                }
+                
+                return { timestamp: c[0]?.v || "", ref: c[1]?.v || "", name: c[2]?.v || "", date: c[3]?.f || c[3]?.v || "", jsonData: jData };
+            }).filter(r => r !== null);
+            
             sheetRecords.sort((a, b) => a.name.localeCompare(b.name));
             const sel = document.getElementById('cloudHistory'); sel.innerHTML = '<option>-- Load Record --</option>';
             sheetRecords.forEach((row, idx) => { const opt = document.createElement('option'); opt.value = idx; opt.text = row.name; sel.appendChild(opt); });
@@ -734,9 +906,9 @@
             
             if (isAdmin) {
                 document.getElementById('saveBtn').classList.add('hidden'); document.getElementById('unlockBtn').classList.remove('hidden');
-                document.getElementById('addTableBtn').disabled = true; document.getElementById('addTableBtn').classList.add('opacity-50', 'cursor-not-allowed');
-            } else {
-                 // Non-admins never see save/unlock buttons anyway due to attemptLogin logic
+                // --- REVERT: DISABLE ADD TABLE BUTTON ON LOAD (ORIGINAL LOGIC) ---
+                document.getElementById('addTableBtn').disabled = true; 
+                document.getElementById('addTableBtn').classList.add('opacity-50', 'cursor-not-allowed');
             }
             
             document.getElementById('tariffNo').value = data.basic.ref; document.getElementById('dateToday').value = data.basic.date;
@@ -745,12 +917,10 @@
             document.getElementById('creditDays').value = data.basic.cred; document.getElementById('salesPerson').value = data.basic.ver;
             document.getElementById('billingTerms').value = data.basic.bill; document.getElementById('stream').value = data.basic.stream;
             
-            // Set Prepared By if it exists in saved data, else keep current
             if (data.basic.preparedBy) {
                 document.getElementById('preparedByName').innerText = data.basic.preparedBy;
             }
 
-            // Trigger color check
             checkCommodityColor();
 
             const statusDiv = document.getElementById('mainStatus'); statusDiv.innerText = "Approved & Valid"; statusDiv.className = "input-field h-8 flex items-center justify-center font-bold text-[10px] uppercase rounded border text-center status-valid";
@@ -761,6 +931,15 @@
                 document.getElementById(`tt_${id}`).value = tblData.tt; document.getElementById(`sl_${id}`).value = tblData.sl;
                 document.getElementById(`df_${id}`).value = tblData.df; document.getElementById(`dt_${id}`).value = tblData.dt;
                 document.getElementById(`tbl_rem_${id}`).value = tblData.rem;
+                
+                // Restore Doc Link for this table
+                if(tblData.docLink) {
+                    document.getElementById(`docLink_${id}`).value = tblData.docLink;
+                    document.getElementById(`uploadStatus_${id}`).innerHTML = `✅ <b>Document Attached</b>`;
+                    document.getElementById(`uploadStatus_${id}`).className = "text-xs font-bold text-green-600";
+                    document.getElementById(`previewBtn_${id}`).classList.remove('hidden');
+                }
+
                 tblData.rows.forEach((r, i) => {
                     document.getElementById(`t_${id}_pub_${i}`).value = r.pub; document.getElementById(`t_${id}_railm_${i}`).value = r.railm;
                     document.getElementById(`t_${id}_disc_${i}`).value = r.disc; document.getElementById(`t_${id}_slr_${i}`).value = r.slr;
@@ -789,9 +968,9 @@
 
     function disableAllInputs(disabled) {
         document.querySelectorAll('input, select, textarea').forEach(el => {
-            if (!['searchBox', 'cloudHistory', 'sidebarSearch'].includes(el.id) && !el.id.startsWith('reportFilter')) {
+            // Keep Upload Inputs Enabled so user can see links
+            if (!['searchBox', 'cloudHistory', 'sidebarSearch'].includes(el.id) && !el.id.startsWith('reportFilter') && !el.id.startsWith('docLink_') && !el.id.startsWith('fileInput_')) {
                 el.disabled = disabled; 
-                // Removed opacity-70 logic here because we are handling it with specific CSS for blue/bold
                 el.classList.toggle('cursor-not-allowed', disabled);
             }
         });
@@ -801,7 +980,6 @@
         if(!skipConfirm && !confirm("Clear Form?")) return;
         editingRecordRef = null; 
         
-        // Button Logic Reset
         const user = document.getElementById('currentUserDisplay').innerText;
         const isAdmin = ADMIN_USERS.includes(user);
         
@@ -825,11 +1003,9 @@
         
         checkCommodityColor(); // Reset color
 
-        // Auto-select logged in user if available
         const loggedUser = document.getElementById('loginUser').value;
         if(loggedUser) {
             const salesDropdown = document.getElementById('salesPerson');
-            // Check if logged user is in sales dropdown options
             let inList = false;
             for(let i=0; i<salesDropdown.options.length; i++){
                 if(salesDropdown.options[i].value === loggedUser) inList = true;
@@ -859,9 +1035,11 @@
                 <td><input type="number" id="t_${id}_disc_${i}" value="" oninput="calcTableRow(${id}, ${i})" class="bg-yellow-col"></td>
                 <td><input type="number" id="t_${id}_slr_${i}" value="" readonly tabindex="-1"></td>
                 <td><input type="number" id="t_${id}_slb_${i}" value="" readonly tabindex="-1"></td>
-                <td><input type="number" id="t_${id}_slw_${i}" value="" readonly tabindex="-1"></td>
-                <td><input type="number" id="t_${id}_slf_${i}" value="" readonly tabindex="-1"></td>
-                <td><input type="number" id="t_${id}_sls_${i}" value="" readonly tabindex="-1"></td>
+                <!-- EDITED: Added class for styling and oninput event, removed readonly -->
+                <td><input type="number" id="t_${id}_slw_${i}" value="" oninput="calcTableRow(${id}, ${i})" class="bg-blue-50 font-bold text-blue-800"></td>
+                <td><input type="number" id="t_${id}_slf_${i}" value="" oninput="calcTableRow(${id}, ${i})" class="bg-blue-50 font-bold text-blue-800"></td>
+                <td><input type="number" id="t_${id}_sls_${i}" value="" oninput="calcTableRow(${id}, ${i})" class="bg-blue-50 font-bold text-blue-800"></td>
+                
                 <td><input type="number" id="t_${id}_cha_${i}" value="" oninput="calcTableRow(${id}, ${i})" class="bg-teal-col"></td>
                 <td><input type="number" id="t_${id}_fwd_${i}" value="" oninput="calcTableRow(${id}, ${i})" class="bg-teal-col"></td>
                 <td><input type="number" id="t_${id}_sub_${i}" value="" oninput="calcTableRow(${id}, ${i})" class="bg-yellow-col font-bold"></td>
@@ -871,7 +1049,24 @@
                 <td class="bg-red-col"><span id="t_${id}_res_t_${i}"></span></td>
             </tr>`;
         });
-        div.innerHTML = `<div id="headerBox_${id}" class="grid grid-cols-5 gap-4 mb-2 bg-[#1e293b] p-2 rounded border border-gray-800 items-end"><div class="col-span-1 flex flex-col justify-end"><label class="block text-[10px] font-bold text-white uppercase mb-1">Current Status</label><div id="status_${id}" class="px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase status-valid w-full">Approved & Valid</div></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Tariff Type <span class="text-red-400">*</span></label><select id="tt_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-purple-50 text-purple-900 border-purple-300"><option value="">-- Select --</option><option value="FACTORY">FACTORY</option><option value="OWPL">OWPL</option><option value="PSWC">PSWC</option><option value="ADDITIONAL SUBSIDY">ADDITIONAL SUBSIDY</option></select></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Shipping Line <span class="text-red-400">*</span></label><select id="sl_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-white uppercase border-blue-500"><option value="">-- Select --</option>${Object.keys(lineData).map(k => `<option value="${k}">${k}</option>`).join('')}</select></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Effective From</label><input type="date" id="df_${id}" class="input-field h-8 bg-white"></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">End Date</label><input type="date" id="dt_${id}" class="input-field h-8 bg-white" onchange="updateTableValues(${id}, true)"></div></div><div class="mb-2"><textarea id="tbl_rem_${id}" class="w-full border border-black rounded p-1 text-xs bg-yellow-100 font-bold resize-none" rows="2" placeholder="Table specific remarks..."></textarea></div><div class="flex justify-end mb-1"><button onclick="if(confirm('Remove?')) { this.closest('.table-block').remove(); checkExpiryLogic(); }" class="text-red-500 font-bold text-xs hover:underline no-pdf"><i class="fas fa-trash"></i> Remove Table</button></div><div class="overflow-x-auto"><table class="tariff-table border border-gray-600"><thead class="th-main text-white"><tr><th class="w-32">Shipping Line /Tariff Type</th><th class="w-40">Weight Slab Per Container</th><th>Public Tariff</th><th>Rail Margins Including EIC</th><th class="bg-amber-600 border-amber-800">Discount on Railfreight</th><th>S/Line Discount Railfreight</th><th>S/Line Discount BSS</th><th>S/Line Discount WH Stuffing</th><th>S/Line Discount F/S Lock</th><th>S/Line Discount Self Seal</th><th class="bg-emerald-700 border-emerald-800">CHA Incentive</th><th class="bg-emerald-700 border-emerald-800">Forwarder Incentive</th><th>Transport Subsidy</th><th class="bg-slate-700 text-white border-slate-800">HTPL Margins WH</th><th class="bg-slate-700 text-white border-slate-800">HTPL Margins F/S Lock</th><th class="bg-slate-700 text-white border-slate-800">HTPL Margins Self Seal</th><th class="bg-red-700 text-white border-red-900">Revised Billing</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+        
+        // --- ADDED UPLOAD BOX FOR EACH TABLE ---
+        const uploadHTML = `
+        <div class="upload-section-mini w-1/2 no-print">
+            <div class="upload-box-mini" onclick="triggerUpload(${id})">
+                <span style="font-size:18px;">📂</span> <span id="uploadStatus_${id}" class="text-xs font-bold text-gray-700">Upload Doc</span>
+            </div>
+            <input type="file" id="fileInput_${id}" style="display:none" onchange="uploadToCloudinary(this, ${id})">
+            <input type="hidden" id="docLink_${id}"> 
+            <div class="text-center mt-1">
+                <button type="button" id="previewBtn_${id}" class="bg-teal-600 text-white text-[10px] font-bold py-0.5 px-2 rounded hidden hover:bg-teal-700 shadow" onclick="openDocModal(${id})">
+                    <i class="fas fa-eye mr-1"></i> View
+                </button>
+            </div>
+        </div>`;
+
+        div.innerHTML = `${uploadHTML}
+        <div id="headerBox_${id}" class="grid grid-cols-5 gap-4 mb-2 bg-[#1e293b] p-2 rounded border border-gray-800 items-end"><div class="col-span-1 flex flex-col justify-end"><label class="block text-[10px] font-bold text-white uppercase mb-1">Current Status</label><div id="status_${id}" class="px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase status-valid w-full">Approved & Valid</div></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Tariff Type <span class="text-red-400">*</span></label><select id="tt_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-purple-50 text-purple-900 border-purple-300"><option value="">-- Select --</option><option value="FACTORY">FACTORY</option><option value="OWPL">OWPL</option><option value="PSWC">PSWC</option><option value="ADDITIONAL SUBSIDY">ADDITIONAL SUBSIDY</option></select></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Shipping Line <span class="text-red-400">*</span></label><select id="sl_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-white uppercase border-blue-500"><option value="">-- Select --</option>${Object.keys(lineData).map(k => `<option value="${k}">${k}</option>`).join('')}</select></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Effective From</label><input type="date" id="df_${id}" class="input-field h-8 bg-white"></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">End Date</label><input type="date" id="dt_${id}" class="input-field h-8 bg-white" onchange="updateTableValues(${id}, true)"></div></div><div class="mb-2"><textarea id="tbl_rem_${id}" class="w-full border border-black rounded p-1 text-xs bg-yellow-100 font-bold resize-none" rows="2" placeholder="Table specific remarks..."></textarea></div><div class="flex justify-end mb-1"><button onclick="if(confirm('Remove?')) { this.closest('.table-block').remove(); checkExpiryLogic(); }" class="text-red-500 font-bold text-xs hover:underline no-pdf"><i class="fas fa-trash"></i> Remove Table</button></div><div class="overflow-x-auto"><table class="tariff-table border border-gray-600"><thead class="th-main text-white"><tr><th class="w-32">Shipping Line /Tariff Type</th><th class="w-40">Weight Slab Per Container</th><th>Public Tariff</th><th>Rail Margins Including EIC</th><th class="bg-amber-600 border-amber-800">Discount on Railfreight</th><th>S/Line Discount Railfreight</th><th>S/Line Discount BSS</th><th>S/Line Discount WH Stuffing</th><th>S/Line Discount F/S Lock</th><th>S/Line Discount Self Seal</th><th class="bg-emerald-700 border-emerald-800">CHA Incentive</th><th class="bg-emerald-700 border-emerald-800">Forwarder Incentive</th><th>Transport Subsidy</th><th class="bg-slate-700 text-white border-slate-800">HTPL Margins WH</th><th class="bg-slate-700 text-white border-slate-800">HTPL Margins F/S Lock</th><th class="bg-slate-700 text-white border-slate-800">HTPL Margins Self Seal</th><th class="bg-red-700 text-white border-red-900">Revised Billing</th></tr></thead><tbody>${rows}</tbody></table></div>`;
         document.getElementById('tablesContainer').appendChild(div);
         updateTableValues(id);
     }
