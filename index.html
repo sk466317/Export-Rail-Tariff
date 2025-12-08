@@ -400,14 +400,20 @@
     // --- TEMPLATE FUNCTIONS ---
     function setTemplateNewApproval() {
         document.getElementById('approvalEmailBody').value = "Dear Sir,\n\n\n\n \nThanks & Regards";
+        document.getElementById('approvalEmailBody').style.height = 'auto'; 
+        document.getElementById('approvalEmailBody').style.height = document.getElementById('approvalEmailBody').scrollHeight + 'px';
     }
     function setTemplateCustomerAdd() {
         const c = document.getElementById('ap_customerName').value || "Customer Name";
         document.getElementById('approvalEmailBody').value = `Dear Sir, \n \nPlease Approve Below Addition of Shipper in A/c of "${c}" (Non-Agri in all cost sheets) \n \nNew Shipper\nName:- ............................................\nWEF:-...................\nClearance Location :- ......................   \n\nThanks & Regards\nHTPL Customer Service`;
+        document.getElementById('approvalEmailBody').style.height = 'auto'; 
+        document.getElementById('approvalEmailBody').style.height = document.getElementById('approvalEmailBody').scrollHeight + 'px';
     }
     function setTemplateAddLine() {
         const c = document.getElementById('ap_customerName').value || "Customer Name";
         document.getElementById('approvalEmailBody').value = `Dear Sir,\n \nCustomer has started some bookings on .............. Line.\n \nPlease approve below cost sheet of "${c}" to gain this additional business from this customer.\n \nThanks & Regards\nHTPL Customer Service`;
+        document.getElementById('approvalEmailBody').style.height = 'auto'; 
+        document.getElementById('approvalEmailBody').style.height = document.getElementById('approvalEmailBody').scrollHeight + 'px';
     }
 
     function addTransportRow(d={}, targetId='tbodyTransport'){const tr=document.createElement('tr');const s=(v,o)=>v===o?'selected':'';tr.innerHTML=`<td><input type="text" class="font-bold w-full uppercase" value="${d.t||'TRANSPORTER'}"></td><td>Kilaraipur</td><td><select class="font-bold w-full"><option ${s(d.d,'Ludhiana')}>Ludhiana</option><option ${s(d.d,'Mandi')}>Mandi</option></select></td><td><input type="number" class="font-bold w-full" value="${d.d20||''}"></td><td><input type="number" class="font-bold w-full" value="${d.d40||''}"></td><td><textarea class="w-full font-bold resize-none" rows="2">${d.rem||''}</textarea></td><td class="no-print"><button onclick="this.closest('tr').remove()" class="text-red-500 no-pdf">X</button></td>`;document.getElementById(targetId).appendChild(tr)}
@@ -962,7 +968,14 @@
                 
                 // Specific fix for textarea height
                 if(orig.tagName === 'TEXTAREA') {
-                    span.style.minHeight = '60px';
+                    // Check if it's the email template body
+                    if(orig.id === 'approvalEmailBody') {
+                        // For email body, use the scrollHeight or auto height
+                        span.style.minHeight = Math.max(orig.scrollHeight, 128) + 'px';
+                        span.style.border = 'none'; // Explicitly no border for email body in HTML output too
+                    } else {
+                        span.style.minHeight = '60px';
+                    }
                     span.style.alignItems = 'flex-start'; // Align text top
                 }
 
@@ -977,7 +990,8 @@
 
             // 2. Clean up unwanted elements
             // Remove buttons, hidden elements, and the specific history dropdowns
-            const toRemove = clone.querySelectorAll('button, .hidden, .upload-section-mini, #allTariffHistory, #approvalHistory, #mainApprovalHistory');
+            // NOTICE: We are NOT removing #approvalCustomerListContainer anymore as requested
+            const toRemove = clone.querySelectorAll('button, .hidden:not(#approvalCustomerListContainer), .upload-section-mini, #allTariffHistory, #approvalHistory, #mainApprovalHistory');
             toRemove.forEach(e => e.remove());
 
             // 3. Generate File
@@ -1008,6 +1022,21 @@
                     .bg-\\[\\#1e293b\\] { background-color: #1e293b; color: white; } /* Header boxes in tariff */
                     /* Force black text on white bg for generated file inputs */
                     .app-input, input, select, textarea { color: black !important; }
+                    
+                    /* Ensure Customer List is visible in download */
+                    #approvalCustomerListContainer { display: block !important; }
+                    #approvalCustomerList { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+                    #approvalCustomerList li { 
+                        padding: 2px 8px; 
+                        border: 1px solid #ddd; 
+                        border-radius: 4px; 
+                        background: #f0f9ff; 
+                        font-size: 10px; 
+                        display: flex; 
+                        align-items: center; 
+                        gap: 4px;
+                    }
+                    #approvalCustomerList li span { font-weight: bold; color: #0ea5e9; }
                 </style>
             </head>
             <body>
@@ -1119,6 +1148,233 @@
 
         XLSX.utils.book_append_sheet(wb, ws, "Approval Request");
         XLSX.writeFile(wb, `Approval_Request_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
+    
+    function sendEmail(){/* Simplified */ window.location.href="mailto:?subject=Tariff&body=Check Attachment";}
+    function filterDropdown(){const v=document.getElementById('searchBox').value.toLowerCase(),o=document.getElementById('cloudHistory').options;for(let i=1;i<o.length;i++)o[i].style.display=o[i].text.toLowerCase().includes(v)?"":"none"}
+    function filterSidebarList(){const v=document.getElementById('sidebarSearch').value.toLowerCase(),l=document.getElementById('customerList').getElementsByTagName('li');for(let i=0;i<l.length;i++)l[i].style.display=l[i].innerText.toLowerCase().includes(v)?"flex":"none"}
+    function findAndLoadCustomer(n){const m=sheetRecords.filter(r=>r.name.toUpperCase()===n.toUpperCase()).sort((a,b)=>new Date(b.date)-new Date(a.date));if(m.length>0)loadSelectedRecord(sheetRecords.indexOf(m[0]));else{if(confirm("New sheet for "+n+"?")){resetForm(true);document.getElementById('customerName').value=n.toUpperCase()}}}
+    function openCustomerModal(){document.getElementById('customerModal').classList.remove('hidden');document.getElementById('customerModal').style.display='flex'}
+    function closeCustomerModal(){document.getElementById('customerModal').classList.add('hidden');document.getElementById('customerModal').style.display='none'}
+    function saveBulkCustomers(){const v=document.getElementById('bulkCustomerInput').value;if(v)v.split(',').forEach(n=>{if(n.trim()&&!customerList.some(c=>c.name===n.trim()))customerList.push({name:n.trim(),date:new Date().toLocaleDateString()})});renderCustomerList();closeCustomerModal()}
+    function openReportModal(){document.getElementById('reportModal').classList.remove('hidden');document.getElementById('reportModal').style.display='flex';populateReportFilters();generateMasterReport();}
+    function closeReportModal(){document.getElementById('reportModal').classList.add('hidden');document.getElementById('reportModal').style.display='none'}
+    function resetReportFilters(){
+        document.getElementById('reportFilterCustomerSelect').value="";
+        document.getElementById('reportFilterCust').value="";
+        document.getElementById('reportFilterSales').value="";
+        document.getElementById('reportFilterComm').value="";
+        document.getElementById('reportFilterLine').value="";
+        document.getElementById('reportFilterType').value="";
+        generateMasterReport();
+    }
+    function populateReportFilters(){
+        // ... existing populate filters code ...
+        const custSelect = document.getElementById('reportFilterCustomerSelect'); 
+        const salesFilter = document.getElementById('reportFilterSales'); 
+        const commFilter = document.getElementById('reportFilterComm'); 
+        const lineFilter = document.getElementById('reportFilterLine'); 
+        const typeFilter = document.getElementById('reportFilterType');
+
+        // Reset all
+        if(custSelect) custSelect.innerHTML = '<option value="">All Customers</option>';
+        if(salesFilter) salesFilter.innerHTML = '<option value="">All Sales Persons</option>';
+        if(commFilter) commFilter.innerHTML = '<option value="">All Commodities</option>';
+        if(lineFilter) lineFilter.innerHTML = '<option value="">All Shipping Lines</option>';
+        if(typeFilter) typeFilter.innerHTML = '<option value="">All Tariff Types</option>';
+
+        const uCust = new Set(), uSales = new Set(), uComm = new Set(), uLine = new Set(), uType = new Set();
+        
+        sheetRecords.forEach(r=>{
+            const d = r.parsedData; 
+            if(!d) return;
+            if(d.basic.cust) uCust.add(d.basic.cust);
+            if(d.basic.ver) uSales.add(d.basic.ver);
+            if(d.basic.comm) uComm.add(d.basic.comm);
+            if(d.tables && Array.isArray(d.tables)) {
+                d.tables.forEach(t => {
+                    if(t.sl) uLine.add(t.sl);
+                    if(t.tt) uType.add(t.tt);
+                });
+            }
+        });
+        
+        if(custSelect) Array.from(uCust).sort().forEach(c=>custSelect.innerHTML+=`<option value="${c}">${c}</option>`);
+        if(salesFilter) Array.from(uSales).sort().forEach(s=>salesFilter.innerHTML+=`<option value="${s}">${s}</option>`);
+        if(commFilter) Array.from(uComm).sort().forEach(c=>commFilter.innerHTML+=`<option value="${c}">${c}</option>`);
+        if(lineFilter) Array.from(uLine).sort().forEach(l=>lineFilter.innerHTML+=`<option value="${l}">${l}</option>`);
+        if(typeFilter) Array.from(uType).sort().forEach(t=>typeFilter.innerHTML+=`<option value="${t}">${t}</option>`);
+    }
+    function generateMasterReport(){
+        // ... existing generate report code ...
+        const contentDiv = document.getElementById('reportContent');
+        if(!contentDiv) return;
+        
+        if(sheetRecords.length === 0) {
+            contentDiv.innerHTML = "<p class='p-4 text-center font-bold text-black'>No data synced. Please close and click refresh icon on top.</p>";
+            return;
+        }
+
+        const filters = {
+            cust: document.getElementById('reportFilterCustomerSelect')?.value || "",
+            search: document.getElementById('reportFilterCust')?.value.toLowerCase() || "",
+            sales: document.getElementById('reportFilterSales')?.value || "",
+            comm: document.getElementById('reportFilterComm')?.value || "",
+            line: document.getElementById('reportFilterLine')?.value || "",
+            type: document.getElementById('reportFilterType')?.value || ""
+        };
+
+        const htmlParts = [];
+        htmlParts.push('<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">');
+        
+        let count = 0;
+
+        sheetRecords.forEach(rec => {
+            const d = rec.parsedData;
+            if(!d || !d.basic) return;
+
+            const f = {
+                cust: d.basic.cust || "Unknown",
+                sales: d.basic.ver || "-",
+                comm: d.basic.comm || "-",
+                date: d.basic.date || "",
+                ref: d.basic.ref || ""
+            };
+
+            if(filters.cust && f.cust !== filters.cust) return;
+            if(filters.sales && f.sales !== filters.sales) return;
+            if(filters.comm && f.comm !== filters.comm) return;
+            if(filters.search && !(f.cust + " " + f.ref).toLowerCase().includes(filters.search)) return;
+
+            if(!d.tables || !Array.isArray(d.tables)) return;
+
+            const validTables = d.tables.filter(t => {
+                if(filters.line && t.sl !== filters.line) return false;
+                if(filters.type && t.tt !== filters.type) return false;
+                return true;
+            });
+
+            if(validTables.length === 0) return;
+
+            count++;
+            
+            // Build Transport & Incentive Summaries
+            const transSummary = (d.transport || []).map(t => 
+                `<div class="text-[10px] text-black border-b border-black pb-1 mb-1"><b>${t.transporter}</b> -> ${t.destination} (${t.d20}/${t.d40})</div>`
+            ).join('') || '<span class="text-[10px] text-black italic">No Transport</span>';
+
+            const incSummary = (d.incentives || []).map(i => 
+                 `<div class="text-[10px] text-black border-b border-black pb-1 mb-1"><b>${i.line}</b> (${i.d20}/${i.d40})</div>`
+            ).join('') || '<span class="text-[10px] text-black italic">No Incentives</span>';
+
+            let cardHtml = `
+            <div class="report-card bg-white border-2 border-black shadow-sm flex flex-col">
+                <div class="bg-gray-300 p-2 border-b-2 border-black flex justify-between items-start">
+                    <div class="w-3/4">
+                        <div class="text-xs font-extrabold text-black uppercase truncate" title="${f.cust}">${f.cust}</div>
+                        <div class="text-[10px] font-bold text-black truncate">${f.comm}</div>
+                    </div>
+                    <div class="text-right">
+                         <div class="text-[9px] font-bold bg-orange-200 border border-black text-black px-1 rounded mb-1">${f.sales}</div>
+                         <div class="text-[9px] font-bold text-black">${f.ref}</div>
+                    </div>
+                </div>
+                <div class="p-2 border-b border-black bg-gray-100">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><u class="text-[10px] font-bold text-black">Transport</u>${transSummary}</div>
+                        <div><u class="text-[10px] font-bold text-black">Incentives</u>${incSummary}</div>
+                    </div>
+                </div>
+                <div class="p-2 overflow-x-auto">
+            `;
+
+            validTables.forEach(tbl => {
+                 cardHtml += `<div class="mb-2 border border-black">
+                    <div class="bg-gray-200 text-[10px] font-bold text-black p-1 border-b border-black">${tbl.sl} - ${tbl.tt}</div>
+                    <table class="w-full text-[9px] text-black border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="border border-black p-1">Slab</th><th class="border border-black p-1">Rail</th><th class="border border-black p-1">Line R</th><th class="border border-black p-1">Line B</th><th class="border border-black p-1">Line W</th><th class="border border-black p-1">Line F</th><th class="border border-black p-1">Line S</th><th class="border border-black p-1">CHA</th><th class="border border-black p-1">Fwd</th><th class="border border-black p-1">Sub</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+                 (tbl.rows || []).forEach((r, i) => {
+                     const slabName = slabs[i]?.label.replace('20" ', '').replace('40" ', '') || "Slab "+i;
+                     cardHtml += `<tr>
+                        <td class="border border-black p-1 font-bold whitespace-nowrap">${slabName}</td>
+                        <td class="border border-black p-1 text-center">${r.disc}</td>
+                        <td class="border border-black p-1 text-center">${r.slr}</td>
+                        <td class="border border-black p-1 text-center">${r.slb}</td>
+                        <td class="border border-black p-1 text-center">${r.slw}</td>
+                        <td class="border border-black p-1 text-center">${r.slf}</td>
+                        <td class="border border-black p-1 text-center">${r.sls}</td>
+                        <td class="border border-black p-1 text-center">${r.cha}</td>
+                        <td class="border border-black p-1 text-center">${r.fwd}</td>
+                        <td class="border border-black p-1 text-center">${r.sub}</td>
+                     </tr>`;
+                 });
+                 cardHtml += `</tbody></table></div>`;
+            });
+
+            cardHtml += `</div></div>`;
+            htmlParts.push(cardHtml);
+        });
+
+        htmlParts.push("</div>");
+        
+        if(count === 0) {
+            contentDiv.innerHTML = "<p class='p-10 text-center font-bold text-black text-lg'>No matching records found.</p>";
+        } else {
+            contentDiv.innerHTML = htmlParts.join('');
+        }
+    }
+    function exportReportToExcel(){
+        if(sheetRecords.length === 0) return alert("Please generate a report first.");
+        // Get current filter values to apply to export
+        const filters = {
+            cust: document.getElementById('reportFilterCustomerSelect')?.value || "",
+            search: document.getElementById('reportFilterCust')?.value.toLowerCase() || "",
+            sales: document.getElementById('reportFilterSales')?.value || "",
+            comm: document.getElementById('reportFilterComm')?.value || "",
+            line: document.getElementById('reportFilterLine')?.value || "",
+            type: document.getElementById('reportFilterType')?.value || ""
+        };
+
+        const flatData = []; 
+        flatData.push(["Ref No", "Customer Name", "Sales Person", "Commodity", "Ship Line", "Tariff Type", "Weight Slab", "Discount Rail", "Line Disc Rail", "Line Disc BSS", "Line Disc WH", "Line Disc F/S", "Line Disc Self", "CHA Inc", "Fwd Inc", "Trans Sub", "Transporter", "Trans Disc 20\"", "Trans Disc 40\"", "Incentive Line", "Inc 20\"", "Inc 40\"", "End Date"]);
+        
+        sheetRecords.forEach(rec => {
+            const d = rec.parsedData; if(!d || !d.basic) return;
+            const f = { cust: d.basic.cust, sales: d.basic.ver, comm: d.basic.comm, ref: d.basic.ref };
+
+            if(filters.cust && f.cust !== filters.cust) return;
+            if(filters.sales && f.sales !== filters.sales) return;
+            if(filters.comm && f.comm !== filters.comm) return;
+            if(filters.search && !(f.cust + " " + f.ref).toLowerCase().includes(filters.search)) return;
+
+            let transStr = (d.transport||[]).map(t => t.transporter).join(', '); 
+            let transD20 = (d.transport||[]).map(t => t.d20).join(', '); 
+            let transD40 = (d.transport||[]).map(t => t.d40).join(', ');
+            let incStr = (d.incentives||[]).map(i => i.line).join(', '); 
+            let incD20 = (d.incentives||[]).map(i => i.d20).join(', '); 
+            let incD40 = (d.incentives||[]).map(i => i.d40).join(', ');
+
+            if(d.tables && Array.isArray(d.tables)) {
+                d.tables.forEach(tbl => {
+                    if (filters.line && tbl.sl !== filters.line) return; 
+                    if (filters.type && tbl.tt !== filters.type) return;
+                    const endDate = tbl.dt || "";
+                    (tbl.rows||[]).forEach((row, idx) => { 
+                        const slabLabel = slabs[idx]?.label || "Unknown"; 
+                        flatData.push([ f.ref, f.cust, f.sales, f.comm, tbl.sl, tbl.tt, slabLabel, row.disc, row.slr, row.slb, row.slw, row.slf, row.sls, row.cha, row.fwd, row.sub, transStr, transD20, transD40, incStr, incD20, incD40, endDate ]); 
+                    });
+                });
+            }
+        });
+        const ws = XLSX.utils.aoa_to_sheet(flatData); 
+        const wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, "Master Tariff Report"); 
+        XLSX.writeFile(wb, 'Master_Tariff_Report.xlsx');
     }
     
     // MOVED TO END: Ensure everything is defined
