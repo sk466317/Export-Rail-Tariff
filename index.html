@@ -3,1242 +3,1126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Export Rail Tariff Generator - Login</title>
+    <title>Export Rail Tariff Generator - Optimized</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- EmailJS Library Added -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
     <style>
-        body { background-color: #1f2937; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #e5e7eb; zoom: 90%; overflow: hidden; }
-        .main-wrapper { display: flex; height: 100vh; }
-        .sidebar { width: 260px; background-color: #ffffff; border-left: 1px solid #d1d5db; overflow-y: auto; flex-shrink: 0; color: #374151; box-shadow: -4px 0 15px rgba(0,0,0,0.1); }
-        .content-area { flex: 1; overflow-y: auto; position: relative; }
-
-        /* Login Screen Styles */
-        #login-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
-            z-index: 9999; display: flex; align-items: center; justify-content: center;
-        }
-        .login-box {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 2.5rem;
-            border-radius: 12px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 400px;
-            border-top: 6px solid #fb923c;
-        }
-
-        /* Role based visibility */
-        .hidden-by-role { display: none !important; }
-
+        body{background-color:#1f2937;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;color:#e5e7eb;zoom:90%;overflow:hidden}
+        .main-wrapper{display:flex;height:100vh}
+        .sidebar{width:260px;background-color:#fff;border-left:1px solid #d1d5db;overflow-y:auto;flex-shrink:0;color:#374151;box-shadow:-4px 0 15px rgba(0,0,0,0.1)}
+        .content-area{flex:1;overflow-y:auto;position:relative;padding:10px}
+        #login-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1e3a8a 0%,#0f172a 100%);z-index:9999;display:flex;align-items:center;justify-content:center}
+        .login-box{background:rgba(255,255,255,0.95);padding:2.5rem;border-radius:12px;width:100%;max-width:400px;border-top:6px solid #fb923c}
+        .hidden-by-role{display:none!important}
+        
+        /* --- PRINT STYLES --- */
         @media print {
             @page { size: A4 landscape; margin: 5mm; }
-            body { background-color: white !important; color: black !important; -webkit-print-color-adjust: exact; zoom: 100%; overflow: visible; }
+            body { background-color: #fff !important; color: #000 !important; zoom: 100%; overflow: visible; }
             .main-wrapper { display: block; height: auto; }
             .sidebar { display: none !important; } 
-            .content-area { width: 100% !important; overflow: visible; }
-            .page-container { background-color: #fff !important; box-shadow: none !important; border: none !important; width: 100% !important; margin: 0 !important; max-width: 100% !important; }
-            .no-print { display: none !important; }
-            .table-block { break-inside: avoid; page-break-inside: avoid; border-bottom: none !important; }
-            input:disabled, select:disabled, textarea:disabled { color: #000 !important; opacity: 1 !important; background-color: transparent !important; border: none !important; font-weight: normal !important; }
-            #login-screen { display: none !important; }
+            #topControls, .no-print, button { display: none !important; }
+            .content-area { width: 100% !important; overflow: visible; padding: 0; }
+            .page-container { box-shadow: none !important; border: none !important; width: 100% !important; margin: 0 !important; max-width: 100%; }
+            .table-block { break-inside: avoid; page-break-inside: avoid; }
+            
+            input, select, textarea { border: none !important; background: transparent !important; appearance: none; color: black !important; font-weight: bold !important; }
+            .tariff-table th { 
+                font-size: 9px !important; 
+                white-space: normal !important; 
+                vertical-align: middle;
+                color: black !important;
+                border: 1px solid #000 !important;
+                background-color: #e5e7eb !important;
+            }
+            .tariff-table td { border: 1px solid #000 !important; color: black !important; }
+            label { color: black !important; font-size: 10px !important; font-weight: 800 !important; }
         }
 
-        .pdf-mode { background-color: white !important; color: black !important; font-family: Arial, Helvetica, sans-serif !important; }
-        .pdf-mode .no-pdf { display: none !important; } 
-        .pdf-mode * { box-shadow: none !important; text-shadow: none !important; }
-        .pdf-mode table, .pdf-mode th, .pdf-mode td, .pdf-mode input, .pdf-mode select, .pdf-mode textarea, .pdf-mode .input-field { border: 0.5px solid #000 !important; background-color: transparent !important; color: #000 !important; border-radius: 0 !important; }
-        .pdf-mode th { background-color: #eee !important; color: #000 !important; font-weight: bold !important; font-size: 9px !important; }
-        .pdf-mode input, .pdf-mode select { font-size: 10px !important; height: auto !important; min-height: 20px !important; padding: 4px 2px !important; margin: 0 !important; line-height: 1.2 !important; font-weight: bold !important; }
-        .pdf-mode textarea { font-size: 8px !important; line-height: 1.1 !important; padding: 2px !important; min-height: 40px !important; }
-        
-        .bg-form-base { background-color: #bfdbfe; } 
-
-        /* --- TABLE STYLING --- */
-        .tariff-table { width: 100%; border-collapse: collapse; font-size: 0.65rem; table-layout: fixed; font-family: 'Inter', sans-serif; } 
-        /* 3. Tariff Table Headers Font reduced */
-        .tariff-table th { border: 1px solid #475569; padding: 6px 2px; text-align: center; font-weight: 700; text-transform: uppercase; background-color: #0f172a; color: white; white-space: normal; line-height: 1.1; letter-spacing: 0.5px; font-size: 0.55rem; }
-        .tariff-table td { border: 1px solid #64748b; padding: 4px 2px; text-align: center; color: #334155; }
-        
-        /* CLEAN LOOK: Inputs are blank by default */
-        .tariff-table input { width: 100%; text-align: center; background: transparent; border: none; font-size: 0.7rem; font-weight: 600; color: #1e293b; font-family: 'Inter', sans-serif; }
-        .tariff-table input:placeholder-shown { background-color: transparent; }
-
-        /* Zebra Striping */
-        .tariff-table tbody tr:nth-child(odd) { background-color: #ffffff; }
-        .tariff-table tbody tr:nth-child(even) { background-color: #f8fafc; }
-
-        /* Highlight Row */
-        .highlight-row { background-color: #fff7ed !important; }
-        .highlight-row td { border-top: 1px solid #fdba74; border-bottom: 1px solid #fdba74; color: #c2410c; }
-        .highlight-row td:first-child { border-left: 4px solid #f97316 !important; }
-        .highlight-row input { color: #c2410c !important; font-weight: 800 !important; }
-
-        .bg-yellow-col { background-color: #fef08a !important; }
-        .bg-teal-col { background-color: #ccfbf1 !important; }
-        .bg-gray-col { background-color: #f1f5f9; color: #374151; font-weight: bold; }
-        .bg-red-col { background-color: #fee2e2; color: #dc2626; font-weight: 900; }
-
-        .input-field { border: 1px solid #4b5563; border-radius: 4px; padding: 4px 8px; width: 100%; font-size: 0.75rem; background-color: #f3f4f6; color: #111827; font-weight: 700; }
-        
-        /* 1. VISIBILITY: BLUE & BOLD WHEN DISABLED (READ ONLY) */
-        input:disabled, select:disabled, textarea:disabled { 
-            background-color: #fff7ed !important; /* Light Orange/Brown bg */
-            color: #78350f !important; /* DARK BROWN Color */
-            font-weight: 900 !important; 
-            cursor: not-allowed; 
-            border: 1px solid #fdba74 !important;
-            opacity: 1 !important; 
-            -webkit-text-fill-color: #78350f !important;
-        }
-        .status-valid { background-color: #bbf7d0; color: #14532d; border: 2px solid #15803d; } 
-        .status-expired { background-color: #fee2e2; color: #991b1b; border: 2px solid #ef4444; }
-        .status-pending { background-color: #f3f4f6; color: #6b7280; border: 2px solid #9ca3af; }
-
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-        #loadingOverlay { background: rgba(0,0,0,0.8); display: none; z-index: 4000; } 
-        
-        .sidebar::-webkit-scrollbar { width: 6px; }
-        .sidebar::-webkit-scrollbar-track { background: #f1f1f1; }
-        .sidebar::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
-        .sidebar::-webkit-scrollbar-thumb:hover { background: #555; }
-
-        /* 4. Customer List items styling updated in JS, but basic cursor here */
-        .customer-item { cursor: pointer; transition: none; } 
-        
-        .report-table th { position: sticky; top: 0; background: #fb923c; color: black; z-index: 10; border: 1px solid #c2410c; }
-        .report-table tr:nth-child(even) { background-color: #fff7ed; }
-        .report-table tr:hover { background-color: #fed7aa; }
-        .report-card { border: 1px solid #c2410c; border-radius: 8px; margin-bottom: 20px; background: white; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .report-header { background: #c2410c; color: white; padding: 8px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 0.85rem; }
-        #reportContent { color: black !important; }
-        #reportContent table { color: black !important; border-color: #c2410c !important; }
-        #reportContent td, #reportContent th { border-color: #fdba74 !important; }
-
-        /* 7. Animations */
-        @keyframes drive { from { transform: translateX(-20px); } to { transform: translateX(200px); opacity: 0; } }
-        .truck-anim { animation: drive 4s linear infinite; display: inline-block; color: white; }
-        
-        @keyframes spin { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(360deg); } }
-        .coin-anim { animation: spin 2s linear infinite; display: inline-block; color: gold; }
-
-        /* --- 1. NEW UPLOAD STYLES (GREEN & HALF SIZE) --- */
-        .upload-section-mini { 
-            background: #d1fae5; /* Green-100 */
-            border: 1px solid #34d399; /* Green-400 */
-            padding: 8px; 
-            border-radius: 6px; 
-            margin-bottom: 10px; 
-            width: 50%; /* Half Size */
-        }
-        .upload-box-mini { 
-            border: 2px dashed #059669; /* Green-600 */
-            background: #ecfdf5; /* Green-50 */
-            padding: 8px; 
-            text-align: center; 
-            border-radius: 4px; 
-            cursor: pointer; 
-            transition: 0.2s; 
-        }
-        .upload-box-mini:hover { background: #d1fae5; }
-        
-        /* Upload Preview Modal */
-        #docPreviewModal { display: none; position: fixed; z-index: 5000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center; }
-        .doc-modal-content { background-color: #fff; padding: 20px; width: 90%; max-width: 600px; text-align: center; border-radius: 8px; position: relative; max-height: 90vh; overflow-y: auto; }
-        .close-doc-btn { position: absolute; top: 10px; right: 20px; font-size: 24px; font-weight: bold; cursor: pointer; color: #555; }
-        #docModalImage { max-width: 100%; max-height: 400px; border: 1px solid #ddd; margin-top: 10px; display: block; margin-left: auto; margin-right: auto; }
-
+        .pdf-mode{background-color:#fff!important;color:#000!important;font-family:Arial,sans-serif!important}
+        .pdf-mode .no-pdf{display:none!important}
+        .pdf-mode table,.pdf-mode th,.pdf-mode td,.pdf-mode input,.pdf-mode select,.pdf-mode textarea{border:0.5px solid #000!important;background:0 0!important;color:#000!important;border-radius:0!important}
+        .bg-form-base{background-color:#bfdbfe}
+        .tariff-table{width:100%;border-collapse:collapse;font-size:.65rem;table-layout:fixed;font-family:'Inter',sans-serif}
+        .tariff-table th{border:1px solid #94a3b8;padding:6px 2px;text-align:center;font-weight:700;text-transform:uppercase;background-color:#f1f5f9;color:#0f172a;line-height:1.1;font-size:.55rem}
+        .tariff-table td{border:1px solid #94a3b8;padding:4px 2px;text-align:center;color:#334155}
+        .tariff-table input{width:100%;text-align:center;background:0 0;border:none;font-size:.7rem;font-weight:600;color:#1e293b}
+        .highlight-row{background-color:#fff7ed!important}
+        .highlight-row td{border-top:1px solid #fdba74;border-bottom:1px solid #fdba74;color:#c2410c}
+        .bg-yellow-col{background-color:#fef08a!important}.bg-teal-col{background-color:#ccfbf1!important}.bg-gray-col{background-color:#f1f5f9;color:#374151;font-weight:700}.bg-red-col{background-color:#fee2e2;color:#dc2626;font-weight:900}
+        .input-field{border:1px solid #4b5563;border-radius:4px;padding:4px 8px;width:100%;font-size:.75rem;background-color:#f3f4f6;color:#111827;font-weight:700}
+        input:disabled,select:disabled,textarea:disabled{background-color:#fff7ed!important;color:#78350f!important;font-weight:900!important;border:1px solid #fdba74!important;opacity:1!important}
+        .status-valid{background-color:#bbf7d0;color:#14532d;border:2px solid #15803d}.status-expired{background-color:#fee2e2;color:#991b1b;border:2px solid #ef4444}.status-pending{background-color:#f3f4f6;color:#6b7280;border:2px solid #9ca3af}
+        .status-pending-approval{background-color:#fee2e2;color:#dc2626;border:2px solid #ef4444;font-weight:bold;animation:pulse 2s infinite}
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
+        .overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:3000;display:flex;align-items:center;justify-content:center;flex-direction:column}
+        .customer-item{cursor:pointer}
+        .report-table th{position:sticky;top:0;background:#e2e8f0;color:#000;z-index:10;border:1px solid #000}
+        .report-card{border:1px solid #000;border-radius:8px;margin-bottom:20px;background:#fff;box-shadow:0 4px 6px -1px rgba(0,0,0,.1)}
+        /* Approval View Specifics */
+        #approvalContainer{display:none;flex-direction:column;background:#fff;padding:20px;border-radius:8px;}
+        .app-table{width:100%;border-collapse:collapse;margin-bottom:20px}.app-table td{padding:8px;border:1px solid #ccc;vertical-align:middle}
+        .app-label{font-weight:700;font-size:11px;text-transform:uppercase;color:#000!important}
+        .app-input{width:100%;border:1px solid #999;padding:5px;font-size:12px;font-weight:700;background:#f9f9f9;color:#000!important}
+        /* Hiding specific elements in Approval Mode as requested */
+        #approvalContainer .upload-section-mini,
+        #approvalContainer .status-valid,
+        #approvalContainer .status-expired { display: none !important; }
+        /* Tables in Approval */
+        #approvalContainer .tariff-table th { background-color: #e5e7eb!important; color:black!important; }
+        #approvalContainer .tariff-table input { color:black!important; background:white!important; }
     </style>
 </head>
 <body>
 
+<!-- LOGIN -->
 <div id="login-screen">
     <div class="login-box animate-fade-in-down">
         <div class="text-center mb-6">
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-900 mb-4">
-                <i class="fas fa-train text-3xl"></i>
-            </div>
-            <h2 class="text-2xl font-extrabold text-blue-900">Export Rail Tariff Generator</h2>
-            <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">Authorized Access Only</p>
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-900 mb-4"><i class="fas fa-train text-3xl"></i></div>
+            <h2 class="text-2xl font-extrabold text-blue-900">Export Rail Tariff</h2>
         </div>
-
         <div class="space-y-4">
             <div>
                 <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Select User</label>
-                <select id="loginUser" class="w-full border-2 border-gray-300 rounded p-2 text-sm font-bold text-blue-900 focus:border-blue-500 focus:outline-none bg-gray-50">
+                <select id="loginUser" class="w-full border-2 border-gray-300 rounded p-2 text-sm font-bold text-blue-900 bg-gray-50">
                     <option value="">-- Select Identity --</option>
-                    <option value="ANURAG PANDEY">ANURAG PANDEY</option>
-                    <option value="CHIRAG RANA">CHIRAG RANA</option>
-                    <option value="MOHIK SHARMA">MOHIK SHARMA</option>
-                    <option value="DAMANJIT SINGH">DAMANJIT SINGH</option>
-                    <option value="HARSIMRANJEET SINGH">HARSIMRANJEET SINGH</option>
-                    <option value="KUNAL SAHI">KUNAL SAHI</option>
-                    <option value="RAJESH KUMAR">RAJESH KUMAR</option>
-                    <option value="SUMAN KUMARI">SUMAN KUMARI</option>
-                    <option value="VIKRAM SINGH">VIKRAM SINGH</option>
-                    <option value="ROHIN KALRA">ROHIN KALRA</option>
-                    <option value="ACCOUNTS">ACCOUNTS</option>
+                    <option value="ANURAG PANDEY">ANURAG PANDEY</option><option value="CHIRAG RANA">CHIRAG RANA</option><option value="MOHIK SHARMA">MOHIK SHARMA</option><option value="DAMANJIT SINGH">DAMANJIT SINGH</option><option value="HARSIMRANJEET SINGH">HARSIMRANJEET SINGH</option><option value="KUNAL SAHI">KUNAL SAHI</option><option value="RAJESH KUMAR">RAJESH KUMAR</option><option value="SUMAN KUMARI">SUMAN KUMARI</option><option value="VIKRAM SINGH">VIKRAM SINGH</option><option value="ROHIN KALRA">ROHIN KALRA</option><option value="ACCOUNTS">ACCOUNTS</option>
                 </select>
             </div>
-            
             <div>
                 <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Password</label>
-                <div class="relative">
-                    <input type="password" id="loginPass" class="w-full border-2 border-gray-300 rounded p-2 text-sm font-bold text-blue-900 focus:border-blue-500 focus:outline-none pl-8" placeholder="Enter Password">
-                    <i class="fas fa-lock absolute left-3 top-3 text-gray-400 text-xs"></i>
-                </div>
-                <div class="text-right mt-2">
-                    <a href="#" onclick="openForgotModal()" id="forgotBtn" class="text-xs text-orange-600 hover:text-orange-800 font-bold underline">Forgot Password?</a>
-                </div>
+                <input type="password" id="loginPass" class="w-full border-2 border-gray-300 rounded p-2 text-sm font-bold text-blue-900" placeholder="Enter Password">
             </div>
-
-            <button onclick="attemptLogin()" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded shadow transition duration-200 uppercase text-sm">
-                Secure Login <i class="fas fa-arrow-right ml-2"></i>
-            </button>
-            
-            <div id="loginError" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-2 text-xs font-bold mt-2 text-center">
-                <i class="fas fa-exclamation-circle mr-1"></i> Invalid Password. Try Again.
-            </div>
-        </div>
-        <div class="mt-6 text-center text-[10px] text-gray-400">
-            Hind Terminals Pvt Ltd &copy; 2025
+            <button onclick="attemptLogin()" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded shadow uppercase text-sm">Secure Login</button>
         </div>
     </div>
 </div>
-
-<!-- Modal for Forgot Password Logic -->
-<script>
-    function openForgotModal() {
-       handleForgotPassword();
-    }
-</script>
 
 <div class="main-wrapper" id="appContent" style="display: none;">
-    <div class="content-area p-2 md:p-4" id="mainBody">
+    <!-- LEFT CONTENT AREA -->
+    <div class="content-area">
+        
+        <!-- MAIN FORM CONTAINER -->
+        <div id="mainFormContainer">
+            <div class="sticky top-0 z-50 max-w-[1600px] mx-auto mb-4 no-print" id="topControls">
+                <div class="bg-gray-800 border-l-4 border-blue-600 p-2 rounded shadow-md">
+                    <!-- Horizontal Layout Container -->
+                    <div class="flex flex-wrap items-center gap-2 justify-between">
+                        
+                        <!-- Left Side: Search & Load -->
+                        <div class="flex items-center gap-1 flex-wrap">
+                            <div id="syncStatus" class="text-[10px] font-bold text-gray-300 mr-2"><i class="fas fa-circle-notch fa-spin"></i></div>
+                            <input type="text" id="searchBox" placeholder="Search..." class="border rounded px-2 py-1 text-xs w-32 md:w-48 text-blue-900 font-bold" onkeyup="filterDropdown()">
+                            <select id="cloudHistory" class="border rounded px-2 py-1 text-xs w-32 md:w-48 text-blue-900 font-bold bg-blue-50"><option>-- All Records --</option></select>
+                            <button onclick="loadRecordFromDropdown()" class="bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold shadow hover:bg-blue-700">SHOW</button>
+                            <button onclick="fetchSheetData()" class="bg-gray-600 text-white px-2 py-1 rounded text-xs font-bold shadow hover:bg-gray-700" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+                            
+                            <!-- NEW: Filtered Approval Dropdown in Main Form -->
+                            <select id="mainApprovalHistory" class="border border-yellow-600 rounded px-2 py-1 text-xs w-32 md:w-48 text-blue-900 font-bold bg-yellow-50">
+                                <option>-- Old Approvals --</option>
+                            </select>
+                            <button onclick="loadMainApprovalRecord()" class="bg-yellow-600 text-white px-2 py-1 rounded text-xs font-bold shadow hover:bg-yellow-700">SHOW</button>
 
-        <div class="sticky top-0 z-50 max-w-[1600px] mx-auto mb-4 no-print" id="topControls">
-            <div class="bg-gray-800 border-l-4 border-blue-600 p-3 rounded shadow-md flex flex-col md:flex-row justify-between items-end gap-3">
-                <div class="flex flex-col gap-2">
-                    <div id="syncStatus" class="text-[10px] font-bold text-gray-300"><i class="fas fa-circle-notch fa-spin mr-1"></i> Ready</div>
-                    <div class="flex gap-1 items-center">
-                        <input type="text" id="searchBox" placeholder="Search Cloud..." class="border border-gray-400 rounded px-2 py-1 text-xs w-64 text-blue-900 font-bold bg-white" onkeyup="filterDropdown()">
-                        
-                        <select id="cloudHistory" class="border border-gray-400 rounded px-2 py-1 text-xs w-64 text-blue-900 font-bold bg-blue-50">
-                            <option>-- Load Record --</option>
-                        </select>
-                        <button onclick="loadRecordFromDropdown()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded shadow text-xs font-bold">SHOW</button>
-                        
-                        <button onclick="fetchSheetData()" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded shadow text-xs font-bold" title="Refresh Data"><i class="fas fa-sync-alt"></i></button>
+                            <button onclick="toggleApprovalMode(true, true)" class="bg-yellow-400 text-black px-2 py-1 rounded text-xs font-bold border border-yellow-600 hover:bg-yellow-500 shadow"><i class="fas fa-check-double mr-1"></i> New Approval</button>
+                        </div>
+
+                        <!-- Right Side: Action Buttons -->
+                        <div class="flex items-center gap-1 flex-wrap justify-end">
+                            <div class="text-white text-xs font-bold flex items-center mr-1 bg-gray-700 px-2 py-1 rounded"><i class="fas fa-user-circle mr-1"></i> <span id="currentUserDisplay">User</span></div>
+                            <button onclick="openReportModal()" class="bg-indigo-600 text-white px-3 py-1 rounded font-bold text-xs hover:bg-indigo-700 shadow">Reports</button>
+                            <button onclick="sendEmail()" class="admin-only bg-blue-500 text-white px-3 py-1 rounded font-bold text-xs hover:bg-blue-600 shadow">Email</button>
+                            <button onclick="copyToClipboard()" class="admin-only bg-teal-600 text-white px-3 py-1 rounded font-bold text-xs hover:bg-teal-700 shadow">Img</button>
+                            <button onclick="downloadPDF()" class="admin-only bg-red-600 text-white px-3 py-1 rounded font-bold text-xs hover:bg-red-700 shadow">PDF</button>
+                            
+                            <button id="saveBtn" onclick="saveDataToSheet('new')" class="admin-only bg-green-600 text-white px-4 py-1 rounded font-bold text-xs animate-pulse hover:bg-green-700 shadow">SAVE NEW</button>
+                            
+                            <!-- NEW: Update Record Button (Hidden initially) -->
+                            <button id="updateBtn" onclick="saveDataToSheet('update')" class="admin-only hidden bg-purple-600 text-white px-4 py-1 rounded font-bold text-xs hover:bg-purple-700 shadow">UPDATE RECORD</button>
+                            
+                            <!-- UNLOCK BUTTON FOR MAIN FORM -->
+                            <button id="unlockBtn" onclick="unlockForm(false)" class="admin-only hidden bg-gray-600 text-white px-4 py-1 rounded font-bold text-xs hover:bg-gray-700 shadow">UNLOCK</button>
+                            
+                            <button id="addTableBtn" onclick="addNewTableBlock()" class="admin-only bg-orange-600 text-white px-3 py-1 rounded font-bold text-xs hover:bg-orange-700 shadow">Add Tariff</button>
+                            <button onclick="resetForm()" class="admin-only bg-red-500 text-white px-3 py-1 rounded font-bold text-xs hover:bg-red-600 shadow">New Sheet</button>
+                        </div>
                     </div>
                 </div>
-                <div class="flex flex-wrap gap-2 justify-end">
-                    <div class="text-white text-xs font-bold flex items-center mr-2 bg-gray-700 px-2 rounded">
-                        <i class="fas fa-user-circle mr-1"></i> <span id="currentUserDisplay">User</span>
+            </div>
+
+            <div id="printArea" class="page-container max-w-[1600px] mx-auto bg-form-base shadow-2xl p-6 rounded-lg border border-gray-400 text-black min-h-[800px]">
+                <!-- Header -->
+                <div class="border-b-4 border-blue-900 pb-2 mb-4 flex justify-between items-start">
+                    <div><h2 class="text-xl font-extrabold text-blue-900 uppercase">Export Rail Tariff Sheet</h2><p class="text-gray-700 text-xs font-bold uppercase">(Export Rail Margins & Billing)</p></div>
+                    <div class="text-right">
+                        <div class="flex items-center justify-end mb-1"><span class="text-xs font-bold text-gray-800 mr-2 uppercase">Ref No:</span><input type="text" id="tariffNo" readonly class="text-right font-mono font-bold text-blue-900 border-none w-32 bg-transparent"></div>
+                        <div class="flex items-center justify-end"><span class="text-xs font-bold text-gray-800 mr-2 uppercase">Date:</span><input type="date" id="dateToday" readonly class="text-right text-xs bg-transparent border-none w-32 font-bold"></div>
                     </div>
-                    <button onclick="openReportModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded shadow font-bold text-xs"><i class="fas fa-chart-pie mr-1"></i> Reports</button>
-                    
-                    <button onclick="sendEmail()" class="admin-only bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 rounded shadow font-bold text-xs"><i class="fas fa-envelope mr-1"></i> Email</button>
-                    <button onclick="copyToClipboard()" class="admin-only bg-teal-600 hover:bg-teal-700 text-white px-4 py-1.5 rounded shadow font-bold text-xs border border-teal-500"><i class="fas fa-copy mr-1"></i> Copy Img</button>
-                    <button onclick="downloadPDF()" class="admin-only bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded shadow font-bold text-xs"><i class="fas fa-file-pdf mr-1"></i> PDF</button>
-                    
-                    <button id="saveBtn" onclick="saveDataToSheet()" class="admin-only bg-green-600 hover:bg-green-700 text-white px-6 py-1.5 rounded shadow font-bold text-xs animate-pulse flex items-center gap-2">
-                        <i class="fas fa-save"></i> <span id="saveBtnText">SAVE NEW</span>
-                    </button>
-                    <button id="unlockBtn" onclick="unlockForm()" class="admin-only hidden bg-purple-600 hover:bg-purple-700 text-white px-6 py-1.5 rounded shadow font-bold text-xs flex items-center gap-2">
-                        <i class="fas fa-lock-open"></i> UNLOCK / EDIT
-                    </button>
-                    <button id="addTableBtn" onclick="addNewTableBlock()" class="admin-only bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 rounded shadow font-bold text-xs border border-orange-800"><i class="fas fa-table mr-1"></i> Add Tariff Table</button>
-                    <button type="button" onclick="resetForm()" class="admin-only bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded shadow font-bold text-xs"><i class="fas fa-plus mr-1"></i> New Sheet</button>
+                </div>
+
+                <!-- Basic Info -->
+                <div class="grid grid-cols-5 gap-3 mb-4 bg-white p-4 rounded border border-gray-600 shadow-sm">
+                    <div class="col-span-1"><label class="block text-[10px] font-bold text-blue-700 uppercase">Commodity *</label><select id="commodity" onchange="checkCommodityColor()" class="input-field h-8 bg-blue-50 text-blue-900"><option value="">-- Select --</option><option>AGRI COMMODITY</option><option>NON-AGRI COMMODITY</option></select></div>
+                    <div class="col-span-2"><label class="block text-[10px] font-bold text-gray-600 uppercase">Customer Name *</label><input type="text" id="customerName" oninput="this.value=this.value.toUpperCase();" class="input-field font-bold text-blue-900 h-8 bg-white uppercase border-l-4 border-blue-600"></div>
+                    <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Customer Type *</label><select id="customerType" class="input-field h-8 bg-white uppercase"><option value="">-- Select --</option><option>Shipper</option><option>CHA</option><option>Forwarder</option><option>Shipping Line</option><option>Transporter</option></select></div>
+                    <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Vol / Month *</label><input type="text" id="volMonth" class="input-field h-8 bg-white uppercase" placeholder="TEUs"></div>
+                    <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Credit Days *</label><input type="text" id="creditDays" class="input-field h-8 bg-white" list="creditOpts"><datalist id="creditOpts"><option value="- Days"><option value="15 Days"><option value="30 Days"></datalist></div>
+                    <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Sales Person</label><select id="salesPerson" class="input-field h-8 bg-white font-bold text-blue-800"><option value="">-- Select --</option><option>ANURAG PANDEY</option><option>CHIRAG RANA</option><option>MOHIK SHARMA</option><option>DAMANJIT SINGH</option><option>HARSIMRANJEET SINGH</option><option>KUNAL SAHI</option><option>RAJESH KUMAR</option><option>SUMAN KUMARI</option><option>VIKRAM SINGH</option><option>ROHIN KALRA</option></select></div>
+                    <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Billing Terms *</label><select id="billingTerms" class="input-field h-8 bg-white uppercase"><option value="">-- Select --</option><option>Net Billing</option><option>Net billing + CHA Commission</option><option>Commission Claimed</option></select></div>
+                    <div class="col-span-1"><label class="block text-[10px] font-bold text-green-700 uppercase">Stream</label><input type="text" id="stream" value="Mundra - Kilaraipur" class="input-field h-8 bg-yellow-300 text-black border-yellow-500 font-extrabold"></div>
+                    <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Status</label><div id="mainStatus" class="input-field h-8 flex items-center justify-center font-bold text-[10px] uppercase rounded border text-center status-pending">-</div></div>
+                </div>
+
+                <!-- Transport Table -->
+                <div class="mb-1 pt-4 border border-gray-600 bg-white p-2 rounded">
+                    <div class="flex justify-between items-end mb-1">
+                        <div class="bg-amber-600 text-white px-3 py-1.5 rounded-t font-bold text-xs uppercase w-48"><i class="fas fa-truck mr-2"></i> Transport Tariff</div>
+                        <div class="mb-1 flex items-center gap-2">
+                            <label class="text-[10px] font-bold text-gray-700 uppercase">Claimed By:</label><input type="text" class="border border-gray-600 rounded px-2 py-0.5 text-xs font-bold w-80 bg-white uppercase" value="TRANSPORTER">
+                            <button onclick="addTransportRow({}, 'tbodyTransport')" class="bg-white text-amber-700 hover:bg-gray-100 text-[10px] font-bold px-2 py-0.5 rounded no-print shadow uppercase border border-amber-600">Add Location</button>
+                        </div>
+                    </div>
+                    <table class="tariff-table border border-gray-600">
+                        <thead><tr class="text-white" style="background-color: #d97706;"><th class="w-32">Transporter</th><th class="w-32">Origin</th><th class="w-32">Destination</th><th class="w-24">Discount (₹) 20"</th><th class="w-24">Discount (₹) 40"</th><th class="w-64">Remarks</th><th class="bg-white border-none w-6 no-print"></th></tr></thead>
+                        <tbody id="tbodyTransport"></tbody>
+                    </table>
+                </div>
+
+                <!-- Incentive Table -->
+                <div class="mb-12 pt-2 bg-white p-2 rounded border border-gray-600">
+                    <div class="flex justify-between items-end mb-1">
+                        <div class="bg-teal-700 text-white px-3 py-1.5 rounded-t font-bold text-xs uppercase"><i class="fas fa-coins mr-2"></i> Incentive Details</div>
+                        <div class="mb-1 flex items-center gap-2">
+                            <label class="text-[10px] font-bold text-gray-700 uppercase">Claimed By:</label><input type="text" class="border border-gray-600 rounded px-2 py-0.5 text-xs font-bold w-80 bg-white uppercase" value="CHA">
+                            <button onclick="addIncentiveRow({}, 'tbodyIncentive')" class="bg-white text-teal-800 hover:bg-gray-100 text-[10px] font-bold px-2 py-0.5 rounded no-print shadow uppercase border border-teal-700">Add Row</button>
+                        </div>
+                    </div>
+                    <table class="tariff-table border border-gray-600">
+                        <thead><tr class="text-white" style="background-color: #0d9488;"><th class="w-48">Line</th><th class="w-24">Discount 20"</th><th class="w-24">Discount 40"</th><th class="w-96">Remarks</th><th class="bg-white border-none w-6 no-print"></th></tr></thead>
+                        <tbody id="tbodyIncentive"></tbody>
+                    </table>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 mb-4">
+                    <div class="bg-yellow-50 p-2 rounded border border-gray-600"><label class="block text-[10px] font-bold text-yellow-900 mb-1 uppercase">1. THC Subsidy Remarks</label><textarea id="remTHC" class="w-full border border-gray-500 rounded p-1 text-xs bg-white resize-none" rows="4"></textarea></div>
+                    <div class="bg-blue-50 p-2 rounded border border-gray-600"><label class="block text-[10px] font-bold text-blue-900 mb-1 uppercase">2. Special Arrangements</label><textarea id="remSpecial" class="w-full border border-gray-500 rounded p-1 text-xs bg-white resize-none" rows="4"></textarea></div>
+                    <div class="bg-gray-50 p-2 rounded border border-gray-600"><label class="block text-[10px] font-bold text-gray-900 mb-1 uppercase">3. ADDITIONAL REMARKS</label><textarea id="remAdd" class="w-full border border-gray-500 rounded p-1 text-xs bg-white resize-none" rows="4"></textarea></div>
+                </div>
+
+                <div id="tablesContainer"></div>
+
+                <div class="mt-6 pt-4 border-t border-gray-600 flex justify-between print-only">
+                    <div class="text-center"><p class="font-bold text-[10px] border-t border-black px-8 pt-1 inline-block text-black uppercase">Prepared By</p><div id="preparedByName" class="text-[10px] font-bold text-black uppercase mt-1"></div></div>
+                    <div class="text-center"><p class="font-bold text-[10px] border-t border-black px-8 pt-1 inline-block text-black uppercase">Approved By</p></div>
                 </div>
             </div>
         </div>
+        <!-- END MAIN FORM CONTAINER -->
 
-        <div id="printArea" class="page-container max-w-[1600px] mx-auto bg-form-base shadow-2xl p-6 rounded-lg border border-gray-400 text-black min-h-[800px]">
-            <div class="border-b-4 border-blue-900 pb-2 mb-4 flex justify-between items-start">
-                <div>
-                    <h2 class="text-xl font-extrabold text-blue-900 uppercase tracking-wide">Export Rail Tariff Sheet</h2>
-                    <p class="text-gray-700 text-xs font-bold uppercase tracking-widest">(Export Rail Margins & Billing)</p>
-                </div>
-                <div class="text-right">
-                    <div class="flex items-center justify-end mb-1"><span class="text-xs font-bold text-gray-800 mr-2 uppercase">Ref No:</span><input type="text" id="tariffNo" readonly class="text-right font-mono font-bold text-blue-900 border-none w-32 bg-transparent"></div>
-                    <div class="flex items-center justify-end"><span class="text-xs font-bold text-gray-800 mr-2 uppercase">Date:</span><input type="date" id="dateToday" readonly class="text-right text-xs bg-transparent border-none w-32 font-bold"></div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-5 gap-3 mb-4 bg-white p-4 rounded border border-gray-600 shadow-sm">
-                <div class="col-span-1">
-                    <label class="block text-[10px] font-bold text-blue-700 uppercase">Commodity <span class="text-red-600">*</span></label>
-                    <select id="commodity" onchange="checkCommodityColor()" class="input-field h-8 bg-blue-50 border-blue-300 text-blue-900"><option value="">-- Select --</option><option>AGRI COMMODITY</option><option>NON-AGRI COMMODITY</option></select>
-                </div>
-                <div class="col-span-2">
-                    <label class="block text-[10px] font-bold text-gray-600 uppercase">Customer Name <span class="text-red-600">*</span></label>
-                    <input type="text" id="customerName" oninput="this.value = this.value.toUpperCase();" class="input-field font-bold text-blue-900 h-8 bg-white uppercase border-l-4 border-blue-600" placeholder="ENTER NAME">
-                </div>
-                <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Customer Type <span class="text-red-600">*</span></label><select id="customerType" class="input-field h-8 bg-white uppercase"><option value="">-- Select --</option><option>Shipper</option><option>CHA</option><option>Forwarder</option><option>Shipping Line</option><option>Transporter</option></select></div>
-                <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Vol / Month <span class="text-red-600">*</span></label><input type="text" id="volMonth" class="input-field h-8 bg-white uppercase" placeholder="TEUs"></div>
-
-                <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Credit Days <span class="text-red-600">*</span></label><input type="text" id="creditDays" class="input-field h-8 bg-white" list="creditOpts" placeholder="-- Select --"><datalist id="creditOpts"><option value="- Days"><option value="15 Days"><option value="30 Days"></datalist></div>
-                <div class="col-span-1">
-                    <label class="block text-[10px] font-bold text-gray-600 uppercase">Sales Person</label>
-                    <select id="salesPerson" class="input-field h-8 bg-white text-center font-bold text-blue-800">
-                        <option value="">-- Select --</option>
-                        <option>ANURAG PANDEY</option>
-                        <option>CHIRAG RANA</option>
-                        <option>MOHIK SHARMA</option>
-                        <option>DAMANJIT SINGH</option>
-                        <option>HARSIMRANJEET SINGH</option>
-                        <option>KUNAL SAHI</option>
-                        <option>RAJESH KUMAR</option>
-                        <option>SUMAN KUMARI</option>
-                        <option>VIKRAM SINGH</option>
-                        <option>ROHIN KALRA</option>
+        <!-- APPROVAL FORM CONTAINER (Initially Hidden) -->
+        <div id="approvalContainer">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h2 class="text-xl font-bold text-blue-900 uppercase">New Approval Request</h2>
+                <div class="flex gap-2 flex-wrap justify-end">
+                    <button onclick="toggleApprovalMode(false)" class="bg-gray-500 text-white px-3 py-1.5 rounded text-xs font-bold">Back</button>
+                    <button onclick="refreshApproval()" class="bg-purple-600 text-white px-3 py-1.5 rounded text-xs font-bold"><i class="fas fa-sync mr-1"></i> New</button>
+                    
+                    <!-- NEW: All Tariffs Dropdown -->
+                    <select id="allTariffHistory" class="border border-gray-400 rounded px-2 py-1 text-xs w-48 text-blue-900 font-bold bg-white" onchange="loadTariffRecord()">
+                        <option>-- Tariffs --</option>
                     </select>
-                </div>
-                <div class="col-span-1"><label class="block text-[10px] font-bold text-gray-600 uppercase">Billing Terms <span class="text-red-600">*</span></label><select id="billingTerms" class="input-field h-8 bg-white uppercase"><option value="">-- Select --</option><option>Net Billing</option><option>Net billing + CHA Commission</option><option>Commission Claimed</option></select></div>
-                <div class="col-span-1"><label class="block text-[10px] font-bold text-green-700 uppercase">Stream</label><input type="text" id="stream" value="Mundra - Kilaraipur" class="input-field h-8 bg-yellow-300 text-black border-yellow-500 font-extrabold"></div>
-                <div class="col-span-1">
-                    <label class="block text-[10px] font-bold text-gray-600 uppercase">Status</label>
-                    <div id="mainStatus" class="input-field h-8 flex items-center justify-center font-bold text-[10px] uppercase rounded border text-center status-pending">-</div>
+
+                    <!-- EXISTING: Approval History (Now Filtered) -->
+                    <select id="approvalHistory" class="border border-gray-400 rounded px-2 py-1 text-xs w-48 text-blue-900 font-bold bg-blue-50" onchange="loadApprovalRecord()">
+                        <option>-- Old Approvals --</option>
+                    </select>
+                    
+                    <button id="saveAppBtn" onclick="saveDataToSheet()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded shadow text-xs font-bold animate-pulse">SAVE APPROVAL</button>
+                    
+                    <!-- EXISTING BUTTON -->
+                    <button onclick="downloadApprovalAsImage()" class="bg-teal-600 text-white px-4 py-1.5 rounded text-xs font-bold shadow hover:bg-teal-700" title="Download as Image"><i class="fas fa-image mr-1"></i> Img</button>
+                    
+                    <!-- NEW BUTTONS REQUESTED -->
+                    <button onclick="downloadApprovalAsExcel()" class="bg-emerald-700 text-white px-4 py-1.5 rounded text-xs font-bold shadow hover:bg-emerald-800" title="Download Excel with Formatting"><i class="fas fa-file-excel mr-1"></i> Excel</button>
+                    <button onclick="downloadApprovalAsHTML()" class="bg-orange-500 text-white px-4 py-1.5 rounded text-xs font-bold shadow hover:bg-orange-600" title="Download HTML with Box Formatting"><i class="fas fa-file-code mr-1"></i> HTML</button>
+
+                    <button id="unlockAppBtn" onclick="unlockForm(true)" class="admin-only hidden bg-purple-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-purple-700 shadow">UNLOCK</button>
                 </div>
             </div>
-
-            <div class="mb-1 pt-4 border border-gray-600 bg-white p-2 rounded">
-                <div class="flex justify-between items-end mb-1">
-                    <div class="bg-amber-600 text-white px-3 py-1.5 rounded-t font-bold text-xs uppercase overflow-hidden w-48">
-                         <i class="fas fa-truck truck-anim mr-2"></i> Transport Tariff
-                    </div>
-                    <div class="mb-1 flex items-center gap-2">
-                        <label class="text-[10px] font-bold text-gray-700 uppercase">Claimed By:</label>
-                        <input type="text" class="border border-gray-600 rounded px-2 py-0.5 text-xs font-bold w-80 bg-white uppercase" value="TRANSPORTER">
-                        <button onclick="addTransportRow()" class="bg-white text-amber-700 hover:bg-gray-100 text-[10px] font-bold px-2 py-0.5 rounded no-print shadow uppercase border border-amber-600 no-pdf">Add Location</button>
-                    </div>
+            
+            <!-- NEW: Email Template Box at Top (Fixed Style) -->
+            <div class="mb-4 border border-blue-200 bg-blue-50 p-2 rounded shadow-sm">
+                <div class="flex gap-2 mb-2 flex-wrap">
+                    <button onclick="setTemplateNewApproval()" class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold shadow hover:bg-blue-700">New Approval</button>
+                    <button onclick="setTemplateCustomerAdd()" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold shadow hover:bg-green-700">Customer Addition</button>
+                    <button onclick="setTemplateAddLine()" class="bg-purple-600 text-white px-3 py-1 rounded text-xs font-bold shadow hover:bg-purple-700">Add Shipping Line</button>
                 </div>
-                <table class="tariff-table border border-gray-600" id="tableTransport">
-                    <thead><tr class="text-white" style="background-color: #d97706;"><th class="w-32">Transporter</th><th class="w-32">Origin</th><th class="w-32">Destination</th><th class="w-24">Discount (₹) 20"</th><th class="w-24">Discount (₹) 40"</th><th class="w-64">Remarks</th><th class="bg-white border-none w-6 no-print"></th></tr></thead>
-                    <tbody id="tbodyTransport"></tbody>
-                </table>
+                <textarea id="approvalEmailBody" class="w-full bg-transparent text-black text-xs font-mono font-medium min-h-[128px] resize-none focus:outline-none overflow-hidden" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'" placeholder="Select a template button above..."></textarea>
             </div>
 
-            <div class="mb-12 pt-2 bg-white p-2 rounded border border-gray-600">
-                <div class="flex justify-between items-end mb-1">
-                    <div class="bg-teal-700 text-white px-3 py-1.5 rounded-t font-bold text-xs uppercase">
-                        <i class="fas fa-coins coin-anim mr-2"></i> Incentive Details
-                    </div>
-                    <div class="mb-1 flex items-center gap-2">
-                        <label class="text-[10px] font-bold text-gray-700 uppercase">Claimed By:</label>
-                        <input type="text" class="border border-gray-600 rounded px-2 py-0.5 text-xs font-bold w-80 bg-white uppercase" value="CHA">
-                        <button onclick="addIncentiveRow()" class="bg-white text-teal-800 hover:bg-gray-100 text-[10px] font-bold px-2 py-0.5 rounded no-print shadow uppercase border border-teal-700 no-pdf">Add Row</button>
-                    </div>
+            <table class="app-table">
+                <tr>
+                    <td class="app-label">Commodity *</td><td><select id="ap_commodity" class="app-input"><option value="">-- Select --</option><option>AGRI COMMODITY</option><option>NON-AGRI COMMODITY</option></select></td>
+                    <td class="app-label">Customer Name *</td><td><input type="text" id="ap_customerName" class="app-input uppercase" placeholder="ENTER NAME"></td>
+                </tr>
+                <tr>
+                    <td class="app-label">Customer Type *</td><td><select id="ap_customerType" class="app-input uppercase"><option value="">-- Select --</option><option>Shipper</option><option>CHA</option><option>Forwarder</option><option>Shipping Line</option><option>Transporter</option></select></td>
+                    <td class="app-label">Vol / Month *</td><td><input type="text" id="ap_volMonth" class="app-input uppercase"></td>
+                </tr>
+                <tr>
+                    <td class="app-label">Credit Days *</td><td><input type="text" id="ap_creditDays" class="app-input" list="creditOpts"></td>
+                    <td class="app-label">Sales Person</td><td><select id="ap_salesPerson" class="app-input"><option value="">-- Select --</option><option>ANURAG PANDEY</option><option>CHIRAG RANA</option><option>MOHIK SHARMA</option><option>DAMANJIT SINGH</option><option>HARSIMRANJEET SINGH</option><option>KUNAL SAHI</option><option>RAJESH KUMAR</option><option>SUMAN KUMARI</option><option>VIKRAM SINGH</option><option>ROHIN KALRA</option></select></td>
+                </tr>
+                <tr>
+                    <td class="app-label">Billing Terms *</td><td><select id="ap_billingTerms" class="app-input uppercase"><option value="">-- Select --</option><option>Net Billing</option><option>Net billing + CHA Commission</option><option>Commission Claimed</option></select></td>
+                    <td class="app-label">Stream</td><td><input type="text" id="ap_stream" value="Mundra - Kilaraipur" class="app-input bg-yellow-200"></td>
+                </tr>
+            </table>
+
+            <!-- NEW: MOVED Customer List (Select to Load) Above Transport -->
+            <div id="approvalCustomerListContainer" class="hidden mb-4">
+                <h3 class="text-xs font-bold text-blue-900 mb-1">Customer List</h3>
+                <ul id="approvalCustomerList" class="flex flex-wrap gap-2 max-h-24 overflow-y-auto"></ul>
+            </div>
+
+            <!-- COMPLETE TRANSPORT TABLE FOR APPROVAL -->
+            <div class="mb-4">
+                <div class="flex justify-between items-end mb-1 border-b border-amber-800 pb-1">
+                    <h4 class="font-bold text-xs text-amber-800">Transport Tariff Details</h4>
+                    <button onclick="addTransportRow({}, 'tbodyTransport_ap')" class="bg-amber-700 text-white hover:bg-amber-800 text-[10px] font-bold px-2 py-0.5 rounded shadow">Add Location</button>
                 </div>
                 <table class="tariff-table border border-gray-600">
-                    <thead><tr class="text-white" style="background-color: #0d9488;"><th class="w-48">Line</th><th class="w-24">Discount 20"</th><th class="w-24">Discount 40"</th><th class="w-96">Remarks</th><th class="bg-white border-none w-6 no-print"></th></tr></thead>
-                    <tbody id="tbodyIncentive"></tbody>
+                    <thead><tr class="text-white bg-gray-300"><th class="w-32">Transporter</th><th class="w-32">Origin</th><th class="w-32">Destination</th><th class="w-24">Discount 20"</th><th class="w-24">Discount 40"</th><th class="w-64">Remarks</th><th class="w-6"></th></tr></thead>
+                    <tbody id="tbodyTransport_ap"></tbody>
                 </table>
             </div>
 
-            <div class="grid grid-cols-3 gap-2 mb-4">
-                <div class="bg-yellow-50 p-2 rounded border border-gray-600">
-                    <label class="block text-[10px] font-bold text-yellow-900 mb-1 uppercase">1. THC Subsidy Remarks</label>
-                    <textarea id="remTHC" class="w-full border border-gray-500 rounded p-1 text-xs bg-white resize-none" rows="4"></textarea>
+            <!-- COMPLETE INCENTIVE TABLE FOR APPROVAL -->
+            <div class="mb-4">
+                <div class="flex justify-between items-end mb-1 border-b border-teal-800 pb-1">
+                    <h4 class="font-bold text-xs text-teal-800">Incentive Details</h4>
+                    <button onclick="addIncentiveRow({}, 'tbodyIncentive_ap')" class="bg-teal-700 text-white hover:bg-teal-800 text-[10px] font-bold px-2 py-0.5 rounded shadow">Add Row</button>
                 </div>
-                <div class="bg-blue-50 p-2 rounded border border-gray-600">
-                    <label class="block text-[10px] font-bold text-blue-900 mb-1 uppercase">2. Special Arrangements</label>
-                    <textarea id="remSpecial" class="w-full border border-gray-500 rounded p-1 text-xs bg-white resize-none" rows="4"></textarea>
-                </div>
-                <div class="bg-gray-50 p-2 rounded border border-gray-600">
-                    <label class="block text-[10px] font-bold text-gray-900 mb-1 uppercase">3. ADDITIONAL REMARKS</label>
-                    <textarea id="remAdd" class="w-full border border-gray-500 rounded p-1 text-xs bg-white resize-none" rows="4"></textarea>
-                </div>
+                <table class="tariff-table border border-gray-600">
+                    <thead><tr class="text-white bg-gray-300"><th class="w-48">Line</th><th class="w-24">Discount 20"</th><th class="w-24">Discount 40"</th><th class="w-96">Remarks</th><th class="w-6"></th></tr></thead>
+                    <tbody id="tbodyIncentive_ap"></tbody>
+                </table>
             </div>
 
-            <div id="tablesContainer"></div>
+            <div class="mb-4">
+                <label class="block text-xs font-bold app-label">1. THC Subsidy Remarks</label><textarea id="ap_remTHC" class="app-input h-10 resize-none"></textarea>
+                <label class="block text-xs font-bold mt-1 app-label">2. Special Arrangements</label><textarea id="ap_remSpecial" class="app-input h-10 resize-none"></textarea>
+                <label class="block text-xs font-bold mt-1 app-label">3. ADDITIONAL REMARKS</label><textarea id="ap_remAdd" class="app-input h-10 resize-none"></textarea>
+            </div>
             
-            <div class="mt-6 pt-4 border-t border-gray-600 flex justify-between print-only">
-                <div class="text-center">
-                    <p class="font-bold text-[10px] border-t border-black px-8 pt-1 inline-block text-black uppercase">Prepared By</p>
-                    <div id="preparedByName" class="text-[10px] font-bold text-black uppercase mt-1"></div>
-                </div>
-                <div class="text-center"><p class="font-bold text-[10px] border-t border-black px-8 pt-1 inline-block text-black uppercase">Approved By</p></div>
-            </div>
+            <div class="h-4 bg-gray-100 mb-4 border-t border-b border-gray-300"></div>
+            <div id="ap_tablesContainer"></div>
         </div>
+        <!-- END APPROVAL FORM CONTAINER -->
 
-    </div> <div class="sidebar no-print p-2">
+    </div> 
+    <!-- END LEFT CONTENT AREA -->
+
+    <!-- SIDEBAR (Always Visible now) -->
+    <div class="sidebar no-print p-2">
+        <!-- ... existing sidebar code ... -->
         <div class="sticky top-0 bg-white z-10 pb-2 border-b border-gray-300"> 
             <h2 class="text-sm font-bold text-gray-800 mb-2 text-center uppercase tracking-widest">Customer List</h2>
-            <input type="text" id="sidebarSearch" placeholder="Search List..." onkeyup="filterSidebarList()" class="w-full border border-blue-300 rounded px-2 py-1 text-xs mb-2 mt-1 focus:outline-none focus:border-blue-600 text-black font-bold">
+            <input type="text" id="sidebarSearch" placeholder="Search..." onkeyup="filterSidebarList()" class="w-full border border-blue-300 rounded px-2 py-1 text-xs mb-2 mt-1 focus:outline-none focus:border-blue-600 text-black font-bold">
             <button onclick="openCustomerModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-3 rounded font-bold text-xs flex items-center justify-center shadow"><i class="fas fa-plus mr-2"></i> Add Customer</button>
         </div>
-        <div class="flex justify-between text-[10px] font-bold text-gray-500 border-b border-gray-200 py-1 px-2 bg-gray-50">
-            <span>Customer Name</span>
-            <span>Add Date</span>
-        </div>
-        <div class="overflow-y-auto h-[calc(100vh-160px)]">
-            <ul id="customerList" class="space-y-0.5"></ul>
-        </div>
+        <div class="flex justify-between text-[10px] font-bold text-gray-500 border-b border-gray-200 py-1 px-2 bg-gray-50"><span>Name</span><span>Date</span></div>
+        <div class="overflow-y-auto h-[calc(100vh-160px)]"><ul id="customerList" class="space-y-0.5"></ul></div>
     </div>
+</div>
 
-</div> 
-
-<!-- LOADING OVERLAY -->
+<!-- MODALS & LOADING -->
+<!-- ... existing modals ... -->
 <div id="loadingOverlay" class="overlay hidden" style="background: rgba(0,0,0,0.8);">
     <div class="bg-white p-6 rounded shadow-xl w-96 border border-gray-300 text-center">
-        <div id="progressSection"> 
-            <div class="mb-4"><div class="animate-spin rounded-full h-10 w-10 border-b-4 border-blue-600 mx-auto"></div></div>
-            <h2 class="text-lg font-bold text-blue-900 mb-2">Saving Tariff Sheet.....</h2>
-            <div class="w-full bg-gray-200 rounded-full h-3 mb-1 overflow-hidden"><div id="progressBar" class="bg-blue-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div></div>
-            <p class="text-xs text-gray-500 font-mono" id="progressText">0%</p>
-        </div>
-        <div id="successSection" class="hidden"> 
-            <div class="mb-3 text-green-500 text-6xl animate-bounce"><i class="fas fa-check-circle"></i></div>
-            <h2 class="text-xl font-extrabold text-gray-800 mb-4">Saved Successfully!</h2>
-            <button onclick="closeLoading()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full shadow outline-none">OK</button>
-        </div>
+        <div id="progressSection"><div class="mb-4"><div class="animate-spin rounded-full h-10 w-10 border-b-4 border-blue-600 mx-auto"></div></div><h2 class="text-lg font-bold text-blue-900 mb-2">Processing...</h2><div class="w-full bg-gray-200 rounded-full h-3 mb-1 overflow-hidden"><div id="progressBar" class="bg-blue-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div></div><p class="text-xs text-gray-500 font-mono" id="progressText">0%</p></div>
+        <div id="successSection" class="hidden"><div class="mb-3 text-green-500 text-6xl animate-bounce"><i class="fas fa-check-circle"></i></div><h2 class="text-xl font-extrabold text-gray-800 mb-4">Success!</h2><button onclick="closeLoading()" class="bg-green-600 text-white font-bold py-2 px-6 rounded-full shadow">OK</button></div>
     </div>
 </div>
-
-<!-- DOCUMENT PREVIEW MODAL -->
-<div id="docPreviewModal" class="hidden">
-    <div class="doc-modal-content">
-        <span class="close-doc-btn" onclick="closeDocModal()">&times;</span>
-        <h3 class="text-lg font-bold text-blue-900 border-b border-gray-300 pb-2 mb-2">Document Preview</h3>
-        <div id="docModalBody"></div> 
-        <div class="mt-4 flex justify-center gap-2">
-            <a id="fullDocLink" href="#" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-blue-700">
-                <i class="fas fa-external-link-alt mr-1"></i> Open Original
-            </a>
-            <a id="downloadDocLink" href="#" class="bg-orange-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-orange-700">
-                <i class="fas fa-download mr-1"></i> Download
-            </a>
-        </div>
-    </div>
+<div id="docPreviewModal" class="hidden fixed z-50 left-0 top-0 w-full h-full bg-black bg-opacity-80 flex items-center justify-center">
+    <div class="bg-white p-5 w-11/12 max-w-2xl rounded text-center relative max-h-[90vh] overflow-y-auto"><span class="absolute top-2 right-4 text-2xl font-bold cursor-pointer" onclick="closeDocModal()">&times;</span><h3 class="text-lg font-bold text-blue-900 mb-2">Preview</h3><div id="docModalBody"></div><div class="mt-4"><a id="fullDocLink" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded text-xs font-bold mr-2">Open</a><a id="downloadDocLink" class="bg-orange-600 text-white px-4 py-2 rounded text-xs font-bold">Download</a></div></div>
 </div>
-
 <div id="customerModal" class="overlay hidden" style="background: rgba(0,0,0,0.6);">
     <div class="bg-white p-6 rounded shadow-xl w-96 border border-gray-300">
-        <h3 class="font-bold text-lg mb-2 text-blue-900">Add Customers</h3>
-        <textarea id="bulkCustomerInput" class="w-full border border-gray-400 rounded p-2 text-sm h-32 focus:outline-none focus:border-blue-500 text-black" placeholder="Customer A, Customer B..."></textarea>
-        <div class="flex justify-end gap-2 mt-4">
-            <button onclick="closeCustomerModal()" class="px-4 py-1 bg-gray-400 hover:bg-gray-500 text-white rounded text-xs font-bold">Cancel</button>
-            <button onclick="saveBulkCustomers()" class="px-4 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-bold">Add List</button>
-        </div>
+        <h3 class="font-bold text-lg mb-2 text-blue-900">Add Customers</h3><textarea id="bulkCustomerInput" class="w-full border border-gray-400 rounded p-2 text-sm h-32 text-black" placeholder="Name A, Name B..."></textarea>
+        <div class="flex justify-end gap-2 mt-4"><button onclick="closeCustomerModal()" class="px-4 py-1 bg-gray-400 text-white rounded text-xs font-bold">Cancel</button><button onclick="saveBulkCustomers()" class="px-4 py-1 bg-green-600 text-white rounded text-xs font-bold">Add</button></div>
     </div>
 </div>
-
 <div id="reportModal" class="overlay hidden" style="background: rgba(0,0,0,0.9);">
     <div class="bg-white rounded-lg shadow-2xl w-[95%] h-[90%] flex flex-col border border-gray-600">
-        <div class="bg-gray-800 p-4 border-b border-gray-600 flex justify-between items-center">
-            <h2 class="text-xl font-bold text-white"><i class="fas fa-chart-line mr-2"></i> Tariff & Sales Reports</h2>
-            <button onclick="closeReportModal()" class="text-white hover:text-red-400 text-2xl"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="bg-gray-200 p-2 border-b border-gray-300 flex gap-2 items-center flex-wrap">
-            <span class="text-xs font-bold text-gray-700"><i class="fas fa-filter mr-1"></i> FILTERS:</span>
-            <select id="reportFilterCustomerSelect" class="border border-gray-400 rounded px-2 py-1 text-xs text-blue-900 font-bold" onchange="generateMasterReport()"><option value="">All Customers</option></select>
-            <input type="text" id="reportFilterCust" placeholder="Search Exporter..." class="border border-gray-400 rounded px-2 py-1 text-xs text-blue-900 font-bold w-40" oninput="generateMasterReport()">
-            <select id="reportFilterSales" class="border border-gray-400 rounded px-2 py-1 text-xs text-blue-900 font-bold" onchange="generateMasterReport()"><option value="">All Sales Persons</option></select>
-            <select id="reportFilterComm" class="border border-gray-400 rounded px-2 py-1 text-xs text-blue-900 font-bold" onchange="generateMasterReport()"><option value="">All Commodities</option></select>
-            <select id="reportFilterLine" class="border border-gray-400 rounded px-2 py-1 text-xs text-blue-900 font-bold" onchange="generateMasterReport()"><option value="">All Shipping Lines</option></select>
-            <select id="reportFilterType" class="border border-gray-400 rounded px-2 py-1 text-xs text-blue-900 font-bold" onchange="generateMasterReport()"><option value="">All Tariff Types</option></select>
-            <button onclick="resetReportFilters()" class="text-xs text-blue-600 hover:underline ml-2">Reset Filters</button>
-        </div>
-        <div class="bg-gray-100 p-2 border-b border-gray-300 flex gap-2">
-            <button onclick="generateMasterReport()" class="px-4 py-2 bg-blue-600 text-white rounded font-bold text-xs shadow hover:bg-blue-700">Master Tariff Report (Organized)</button>
-            <button onclick="generateExpiryReport()" class="px-4 py-2 bg-red-600 text-white rounded font-bold text-xs shadow hover:bg-red-700">Expiry Watchlist (30 Days)</button>
-            <button onclick="generateSalesSummary()" class="px-4 py-2 bg-green-600 text-white rounded font-bold text-xs shadow hover:bg-green-700">Sales Person Summary</button>
-            <div class="flex-1"></div>
-            <button onclick="exportReportToExcel()" class="px-4 py-2 bg-emerald-700 text-white rounded font-bold text-xs shadow hover:bg-emerald-800"><i class="fas fa-file-excel mr-2"></i> Download Excel</button>
-        </div>
-        <div class="flex-1 overflow-auto p-4 bg-gray-50 text-black" id="reportContent">
-            <p class="text-center text-gray-500 mt-20">Select filters above and click <b>'Master Tariff Report'</b> to view data.</p>
-        </div>
+        <div class="bg-gray-800 p-4 border-b border-gray-600 flex justify-between items-center"><h2 class="text-xl font-bold text-white">Reports</h2><button onclick="closeReportModal()" class="text-white text-2xl">&times;</button></div>
+        <div class="bg-gray-200 p-2 flex gap-2 items-center flex-wrap"><select id="reportFilterCustomerSelect" class="border border-black text-black rounded px-2 py-1 text-xs font-bold" onchange="generateMasterReport()"></select><input type="text" id="reportFilterCust" placeholder="Search..." class="border border-black text-black rounded px-2 py-1 text-xs w-40 font-bold" oninput="generateMasterReport()"><select id="reportFilterSales" class="border border-black text-black rounded px-2 py-1 text-xs font-bold" onchange="generateMasterReport()"></select><select id="reportFilterComm" class="border border-black text-black rounded px-2 py-1 text-xs font-bold" onchange="generateMasterReport()"></select><select id="reportFilterLine" class="border border-black text-black rounded px-2 py-1 text-xs font-bold" onchange="generateMasterReport()"></select><select id="reportFilterType" class="border border-black text-black rounded px-2 py-1 text-xs font-bold" onchange="generateMasterReport()"></select><button onclick="resetReportFilters()" class="text-xs text-blue-600 ml-2">Reset</button></div>
+        <div class="bg-gray-100 p-2 flex gap-2"><button onclick="generateMasterReport()" class="px-3 py-2 bg-blue-600 text-white rounded font-bold text-xs">Master Report</button><button onclick="exportReportToExcel()" class="px-3 py-2 bg-emerald-700 text-white rounded font-bold text-xs">Excel</button></div>
+        <div class="flex-1 overflow-auto p-4 bg-gray-50 text-black" id="reportContent"></div>
     </div>
 </div>
 
 <script>
-    // --- 1. CONFIGURATION & DATABASE (Combined) ---
-    // Initialize EmailJS
-    const PUBLIC_KEY = "Hb0oU56d79ASV96Nh"; // Your provided public key
-    const SERVICE_ID = "service_kqh6am4";   
-    const TEMPLATE_ID = "template_bwpw6sk"; 
-
-    (function(){
-        emailjs.init(PUBLIC_KEY);
-    })();
-
-    // Unified User Database (Password + Email)
-    const USER_DATABASE = {
-        "ANURAG PANDEY":       { pass: "ANURAGP@121", email: "Anurag.Pandey@hindterminals.com" },
-        "CHIRAG RANA":         { pass: "CRANA@122",   email: "Chirag.Rana@hindterminals.com" },
-        "MOHIK SHARMA":        { pass: "HIKSHA@123",  email: "Mohik.Sharma@hindterminals.com" },
-        "DAMANJIT SINGH":      { pass: "ANJITSIN@124",email: "Damanjit.Singh@hindterminals.com" },
-        "HARSIMRANJEET SINGH": { pass: "JEETSINGH@125",email: "Harsimranjeet.Singh@hindterminals.com" },
-        "KUNAL SAHI":          { pass: "NALSAHI@126", email: "Kunal.sahi@hindterminals.com" },
-        "RAJESH KUMAR":        { pass: "JESHKU@127",  email: "rajesh.kumar@hindterminals.com" },
-        "ROHIN KALRA":         { pass: "ROHINK@3339", email: "rohin.kalra@hindterminals.com" },
-        "ACCOUNTS":            { pass: "ACC@8989",    email: "sumit.thakur@hindterminals.com" },
-        "SUMAN KUMARI":        { pass: "16111980",    email: "Suman.kumari@hindterminals.com" },
-        "VIKRAM SINGH":        { pass: "16111980",    email: "Vikram.singh@hindterminals.com" }
-    };
-
-    // Admins who can see all buttons
-    const ADMIN_USERS = ['SUMAN KUMARI', 'VIKRAM SINGH', 'ROHIN KALRA'];
-
-    function attemptLogin() {
-        const user = document.getElementById('loginUser').value;
-        const pass = document.getElementById('loginPass').value;
-        const errDiv = document.getElementById('loginError');
-
-        if (!user) {
-            alert("Please select a user.");
-            return;
-        }
-
-        // Check against the Unified Database
-        if (USER_DATABASE[user] && USER_DATABASE[user].pass === pass) {
-            // SUCCESS
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('appContent').style.display = 'flex';
-            
-            // Auto-Fill Sales Person
-            const salesDropdown = document.getElementById('salesPerson');
-            if (salesDropdown) {
-                salesDropdown.value = user;
-            }
-            document.getElementById('currentUserDisplay').innerText = user;
-            document.getElementById('preparedByName').innerText = user; // Set Prepared By in Footer
-            
-            // Handle Button Visibility based on Role
-            const isAdmin = ADMIN_USERS.includes(user);
-            document.querySelectorAll('.admin-only').forEach(btn => {
-                if (isAdmin) {
-                    btn.classList.remove('hidden-by-role');
-                } else {
-                    btn.classList.add('hidden-by-role');
-                }
-            });
-
-            // Initialize App
-            fetchSheetData();
-        } else {
-            // FAIL
-            errDiv.classList.remove('hidden');
-            document.getElementById('loginPass').value = '';
-            document.getElementById('loginPass').focus();
-        }
-    }
-
-    // --- 2. HANDLE FORGOT PASSWORD (Direct Integration) ---
-    function handleForgotPassword() {
-        // Use the SAME dropdown used for login
-        const selectedUser = document.getElementById("loginUser").value;
-        const btn = document.getElementById("forgotBtn");
-
-        if(!selectedUser) {
-            alert("Please Select your User Identity from the list above first.");
-            document.getElementById("loginUser").focus();
-            return;
-        }
-
-        const userData = USER_DATABASE[selectedUser];
-        
-        if(!userData) {
-            alert("Error: User data not found for selected user.");
-            return;
-        }
-
-        if(!confirm(`Send password for "${selectedUser}" to email:\n${userData.email}?`)) {
-            return;
-        }
-
-        // Button loading state
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Sending...';
-        btn.disabled = true;
-
-        var templateParams = {
-            name: selectedUser,        
-            to_name: selectedUser,     
-            to_email: userData.email,   
-            password: userData.pass     
-        };
-
-        emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams)
-            .then(function(response) {
-                console.log('SUCCESS!', response.status, response.text);
-                alert(`✅ Password sent successfully to:\n${userData.email}`);
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }, function(error) {
-                console.log('FAILED...', error);
-                alert("❌ Failed to send email. Check API limits or Connection.");
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            });
-    }
-
-    // Allow Enter key to submit login
-    document.getElementById('loginPass').addEventListener("keypress", function(event) {
-        if (event.key === "Enter") {
-            attemptLogin();
-        }
-    });
-
-    // --- 3. CLOUDINARY UPLOAD LOGIC (Dynamic) ---
-    const cloudName = "drbrz3rqv"; 
-    const uploadPreset = "ml_default";
+    const PUBLIC_KEY="Hb0oU56d79ASV96Nh",SERVICE_ID="service_kqh6am4",TEMPLATE_ID="template_bwpw6sk";
+    (function(){emailjs.init(PUBLIC_KEY)})();
+    const USER_DATABASE={"ANURAG PANDEY":{pass:"ANURAGP@121",email:"Anurag.Pandey@hindterminals.com"},"CHIRAG RANA":{pass:"CRANA@122",email:"Chirag.Rana@hindterminals.com"},"MOHIK SHARMA":{pass:"HIKSHA@123",email:"Mohik.Sharma@hindterminals.com"},"DAMANJIT SINGH":{pass:"ANJITSIN@124",email:"Damanjit.Singh@hindterminals.com"},"HARSIMRANJEET SINGH":{pass:"JEETSINGH@125",email:"Harsimranjeet.Singh@hindterminals.com"},"KUNAL SAHI":{pass:"NALSAHI@126",email:"Kunal.sahi@hindterminals.com"},"RAJESH KUMAR":{pass:"JESHKU@127",email:"rajesh.kumar@hindterminals.com"},"ROHIN KALRA":{pass:"ROHINK@3339",email:"rohin.kalra@hindterminals.com"},"ACCOUNTS":{pass:"ACC@8989",email:"sumit.thakur@hindterminals.com"},"SUMAN KUMARI":{pass:"16111980",email:"Suman.kumari@hindterminals.com"},"VIKRAM SINGH":{pass:"16111980",email:"Vikram.singh@hindterminals.com"}};
+    const ADMIN_USERS=['SUMAN KUMARI','VIKRAM SINGH','ROHIN KALRA'];
+    const CONFIG={SCRIPT_URL:'https://script.google.com/macros/s/AKfycbzbG1Lg0-gYLmnuXgkgC3f2_L_s1oDJ0tP8J5ryGYWM2o-WfqANSsH_hd2707NHrboD/exec',SHEET_ID:'1iWYD0BShhoVYOx0HLkvs8-fz53JQisjuvARFGpt9hzg'};
+    const cloudName="drbrz3rqv",uploadPreset="ml_default";
+    let tableCounter=0,customerList=[],sheetRecords=[],editingRecordRef=null,isApprovalMode=false;
+    const slabs=[{label:'20" 00 MT - 10 MT',p:30690,m:10092},{label:'20" 10 MT - 20 MT',p:38720,m:12595},{label:'20" 20 MT - 26 MT',p:46200,m:14512},{label:'20" 26 MT - 30 MT',p:50820,m:15378},{label:'20" Above 30.1 MT',p:50820,m:15378},{label:'40" Upto - 20 MT',p:53790,m:17275},{label:'40" Over - 20 MT',p:65890,m:19425}];
+    const subsidyData={'FACTORY':[0,0,0,0,0,0,0],'OWPL':[3200,3200,3200,3200,3200,5600,5600],'PSWC':[2500,2500,2500,2500,2500,4500,4500],'ADDITIONAL SUBSIDY':[0,0,0,0,0,0,0]};
+    const lineData={'CUSTOMER':{bss:[0,0,0,0,0,0,0],rail:[0,0,0,0,0,0,0],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'MSC':{bss:[933,1161,1335,1414,1414,1548,1744],rail:[500,500,500,500,500,500,500],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'COSCO':{bss:[0,0,0,0,0,0,0],rail:[1490,2120,1900,2320,-2980,2790,2790],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'HAPAG':{bss:[933,1161,1335,1414,1414,1548,1744],rail:[600,600,600,600,600,1200,1200],wh:[2095,2095,2095,2162,4187,2550,2550],fs:[2570,2570,2570,2612,4562,3650,3650],self:[910,910,910,800,2225,700,700]},'CMA CGM':{bss:[933,910,1050,1120,1120,1290,1190],rail:[500,500,500,500,500,1000,1000],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'HMM LINE':{bss:[933,1161,1335,1414,1414,1548,1744],rail:[750,750,750,750,750,1250,1250],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'MAERSK':{bss:[5964,6632,9000,9630,9630,8552,10047],rail:[933,1161,1335,1414,1414,1548,1744],wh:[-1598,-1598,-1598,-923,1102,-1576,-1576],fs:[-1123,-1123,-1123,-473,1477,-476,-476],self:[-2243,-2243,-2243,-1768,-343,-2696,-2696]},'DEFAULT':{bss:[0,0,0,0,0,0,0],rail:[0,0,0,0,0,0,0],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]}};
+    ['OOCL','SEABRIDGE','ONE LINE'].forEach(k=>lineData[k]=lineData['DEFAULT']);
     
-    function triggerUpload(id) {
-        document.getElementById(`fileInput_${id}`).click();
-    }
-
-    function uploadToCloudinary(input, id) {
-        const file = input.files[0];
-        const statusText = document.getElementById(`uploadStatus_${id}`);
-        const hiddenInput = document.getElementById(`docLink_${id}`);
-        const previewBtn = document.getElementById(`previewBtn_${id}`);
-
-        if (!file) return;
-
-        statusText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-        statusText.className = "text-xs font-bold text-blue-600";
-
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("upload_preset", uploadPreset);
-
-        fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
-            method: "POST",
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.secure_url) {
-                hiddenInput.value = data.secure_url; // Save to hidden input
-                statusText.innerHTML = `✅ <b>${file.name}</b>`;
-                statusText.className = "text-xs font-bold text-green-600";
-                
-                previewBtn.classList.remove("hidden");
-                alert("✅ Document Uploaded for this table!");
-            } else {
-                statusText.innerText = "❌ Upload Failed";
-                statusText.className = "text-xs font-bold text-red-600";
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            statusText.innerText = "❌ Network Error";
-            statusText.className = "text-xs font-bold text-red-600";
-        });
-    }
-
-    function openDocModal(id) {
-        const modal = document.getElementById("docPreviewModal");
-        const modalBody = document.getElementById("docModalBody");
-        const link = document.getElementById(`docLink_${id}`).value;
-        const fullLinkBtn = document.getElementById("fullDocLink");
-        const downloadBtn = document.getElementById("downloadDocLink");
-
-        if (!link) return alert("No document found to preview.");
-
-        // 1. Basic Links
-        fullLinkBtn.href = link; 
-        
-        // 2. Download Link (Cloudinary attachment flag)
-        let downloadUrl = link;
-        if (link.includes("/upload/")) {
-            const parts = link.split("/upload/");
-            downloadUrl = parts[0] + "/upload/fl_attachment/" + parts[1];
-        }
-        downloadBtn.href = downloadUrl;
-
-        // 3. Preview Logic
-        modalBody.innerHTML = "";
-        let previewUrl = link;
-
-        // Simple check for PDF vs Image
-        if (link.toLowerCase().endsWith(".pdf")) {
-            if (link.includes("/upload/")) {
-                const parts = link.split("/upload/");
-                previewUrl = parts[0] + "/upload/w_600,pg_1,f_jpg/" + parts[1];
-                if(previewUrl.toLowerCase().endsWith(".pdf")) {
-                     previewUrl = previewUrl.substring(0, previewUrl.length - 4) + ".jpg";
-                }
-            }
-        }
-
-        modalBody.innerHTML = `<img src="${previewUrl}" id="docModalImage" alt="Loading Preview..." onerror="this.onerror=null;this.src='https://via.placeholder.com/400x300?text=Preview+Not+Available';">`;
-        modal.style.display = "flex";
-    }
-
-    function closeDocModal() {
-        document.getElementById("docPreviewModal").style.display = "none";
-    }
-
-    const CONFIG = {
-        SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzbG1Lg0-gYLmnuXgkgC3f2_L_s1oDJ0tP8J5ryGYWM2o-WfqANSsH_hd2707NHrboD/exec',
-        SHEET_ID: '1iWYD0BShhoVYOx0HLkvs8-fz53JQisjuvARFGpt9hzg'
-    };
-
-    let tableCounter = 0;
-    let customerList = [];
-    let sheetRecords = [];
-    let editingRecordRef = null; 
-
-    const slabs = [
-        { label: '20" 00 MT - 10 MT', p: 30690, m: 10092 }, 
-        { label: '20" 10 MT - 20 MT', p: 38720, m: 12595 }, 
-        { label: '20" 20 MT - 26 MT', p: 46200, m: 14512 }, 
-        { label: '20" 26 MT - 30 MT', p: 50820, m: 15378 }, 
-        { label: '20" Above 30.1 MT', p: 50820, m: 15378 }, 
-        { label: '40" Upto - 20 MT', p: 53790, m: 17275 }, 
-        { label: '40" Over - 20 MT', p: 65890, m: 19425 }
-    ];
+    // --- HELPER FUNCTIONS MOVED TO TOP ---
+    function getVal(id){return document.getElementById(id)?document.getElementById(id).value:''}
+    function disableAllInputs(d){document.querySelectorAll('input,select,textarea').forEach(e=>{if(!['searchBox','cloudHistory','approvalHistory','allTariffHistory','mainApprovalHistory','approvalEmailBody'].includes(e.id)&&!e.id.startsWith('reportFilter')&&!e.id.startsWith('docLink_'))e.disabled=d})}
+    function checkCommodityColor(){const c=document.getElementById('commodity');c.classList.remove('bg-yellow-300','bg-green-300','bg-blue-50');if(c.value==='NON-AGRI COMMODITY')c.classList.add('bg-yellow-300');else if(c.value==='AGRI COMMODITY')c.classList.add('bg-green-300');else c.classList.add('bg-blue-50');}
     
-    const subsidyData = { 'FACTORY': [0,0,0,0,0,0,0], 'OWPL': [3200,3200,3200,3200,3200,5600,5600], 'PSWC': [2500,2500,2500,2500,2500,4500,4500], 'ADDITIONAL SUBSIDY': [0,0,0,0,0,0,0] };
-    const lineData = { 'CUSTOMER': { bss:[0,0,0,0,0,0,0], rail:[0,0,0,0,0,0,0], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'MSC': { bss:[933,1161,1335,1414,1414,1548,1744], rail:[500,500,500,500,500,500,500], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'COSCO': { bss:[0,0,0,0,0,0,0], rail:[1490,2120,1900,2320,-2980,2790,2790], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'HAPAG': { bss:[933,1161,1335,1414,1414,1548,1744], rail:[600,600,600,600,600,1200,1200], wh:[2095,2095,2095,2162,4187,2550,2550], fs:[2570,2570,2570,2612,4562,3650,3650], self:[910,910,910,800,2225,700,700] }, 'CMA CGM': { bss:[933,910,1050,1120,1120,1290,1190], rail:[500,500,500,500,500,1000,1000], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'HMM LINE': { bss:[933,1161,1335,1414,1414,1548,1744], rail:[750,750,750,750,750,1250,1250], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] }, 'MAERSK': { bss:[5964,6632,9000,9630,9630,8552,10047], rail:[933,1161,1335,1414,1414,1548,1744], wh:[-1598,-1598,-1598,-923,1102,-1576,-1576], fs:[-1123,-1123,-1123,-473,1477,-476,-476], self:[-2243,-2243,-2243,-1768,-343,-2696,-2696] }, 'DEFAULT': { bss:[0,0,0,0,0,0,0], rail:[0,0,0,0,0,0,0], wh:[0,0,0,0,0,0,0], fs:[0,0,0,0,0,0,0], self:[0,0,0,0,0,0,0] } };
-    ['OOCL','SEABRIDGE','ONE LINE'].forEach(k => lineData[k] = lineData['DEFAULT']);
+    // UPDATED: Render Customer List for BOTH Sidebar and Horizontal View
+    function renderCustomerList(){
+        // Sidebar List
+        const listHtml = customerList.map((c,i)=>`<li class="py-1 px-2 border-b text-[10px] flex justify-between customer-item rounded ${i%2===0?'bg-blue-200':'bg-blue-50'}" onclick="findAndLoadCustomer('${c.name}')"><span class="font-bold text-gray-700">${c.name}</span><span class="text-[9px] text-gray-400">${c.date||''}</span></li>`).join('');
+        document.getElementById('customerList').innerHTML = listHtml;
 
-    document.addEventListener('DOMContentLoaded', () => { 
-        resetForm(true); 
-        // fetchSheetData() moved to after login
-    });
-
-    // 6. Commodity Color Check Function
-    function checkCommodityColor() {
-        const val = document.getElementById('commodity').value;
-        const el = document.getElementById('commodity');
-        // Reset classes
-        el.classList.remove('bg-yellow-300', 'bg-green-300', 'bg-blue-50');
-        
-        if(val === 'NON-AGRI COMMODITY') {
-            el.classList.add('bg-yellow-300');
-        } else if (val === 'AGRI COMMODITY') {
-             el.classList.add('bg-green-300');
-        } else {
-             el.classList.add('bg-blue-50');
-        }
+        // Horizontal List for Approval View
+        // Updated styling: Blue text, Blue-50 background
+        const approvalListHtml = customerList.map(c => `<li class="py-1 px-2 border text-[10px] flex items-center gap-2 customer-item rounded bg-white hover:bg-blue-50 cursor-pointer shadow-sm" onclick="findAndLoadCustomer('${c.name}')"><span class="font-bold text-sky-500">${c.name}</span><span class="text-[9px] text-gray-500">(${c.date||''})</span></li>`).join('');
+        document.getElementById('approvalCustomerList').innerHTML = approvalListHtml;
     }
 
-    function filterDropdown() {
-        const input = document.getElementById('searchBox').value.toLowerCase();
-        const select = document.getElementById('cloudHistory');
-        const options = select.getElementsByTagName('option');
-        for (let i = 1; i < options.length; i++) { options[i].style.display = options[i].text.toLowerCase().includes(input) ? "" : "none"; }
+    // --- TEMPLATE FUNCTIONS ---
+    function setTemplateNewApproval() {
+        document.getElementById('approvalEmailBody').value = "Dear Sir,\n\n\n\n \nThanks & Regards";
+    }
+    function setTemplateCustomerAdd() {
+        const c = document.getElementById('ap_customerName').value || "Customer Name";
+        document.getElementById('approvalEmailBody').value = `Dear Sir, \n \nPlease Approve Below Addition of Shipper in A/c of "${c}" (Non-Agri in all cost sheets) \n \nNew Shipper\nName:- ............................................\nWEF:-...................\nClearance Location :- ......................   \n\nThanks & Regards\nHTPL Customer Service`;
+    }
+    function setTemplateAddLine() {
+        const c = document.getElementById('ap_customerName').value || "Customer Name";
+        document.getElementById('approvalEmailBody').value = `Dear Sir,\n \nCustomer has started some bookings on .............. Line.\n \nPlease approve below cost sheet of "${c}" to gain this additional business from this customer.\n \nThanks & Regards\nHTPL Customer Service`;
     }
 
-    function filterSidebarList() {
-        const input = document.getElementById('sidebarSearch').value.toLowerCase();
-        const items = document.getElementById('customerList').getElementsByTagName('li');
-        for (let i = 0; i < items.length; i++) { items[i].style.display = items[i].innerText.toLowerCase().includes(input) ? "flex" : "none"; }
+    function addTransportRow(d={}, targetId='tbodyTransport'){const tr=document.createElement('tr');const s=(v,o)=>v===o?'selected':'';tr.innerHTML=`<td><input type="text" class="font-bold w-full uppercase" value="${d.t||'TRANSPORTER'}"></td><td>Kilaraipur</td><td><select class="font-bold w-full"><option ${s(d.d,'Ludhiana')}>Ludhiana</option><option ${s(d.d,'Mandi')}>Mandi</option></select></td><td><input type="number" class="font-bold w-full" value="${d.d20||''}"></td><td><input type="number" class="font-bold w-full" value="${d.d40||''}"></td><td><textarea class="w-full font-bold resize-none" rows="2">${d.rem||''}</textarea></td><td class="no-print"><button onclick="this.closest('tr').remove()" class="text-red-500 no-pdf">X</button></td>`;document.getElementById(targetId).appendChild(tr)}
+    function addIncentiveRow(d={}, targetId='tbodyIncentive'){const tr=document.createElement('tr');tr.innerHTML=`<td><input type="text" class="font-bold w-full uppercase" value="${d.l||'MSC'}"></td><td><input type="number" class="font-bold w-full" value="${d.d20||''}"></td><td><input type="number" class="font-bold w-full" value="${d.d40||''}"></td><td><textarea class="font-bold w-full resize-none" rows="2">${d.rem||''}</textarea></td><td class="no-print"><button onclick="this.closest('tr').remove()" class="text-red-500 no-pdf">X</button></td>`;document.getElementById(targetId).appendChild(tr)}
+    
+    function calcTableRow(id,i){
+        const g=(k)=>parseFloat(document.getElementById(`t_${id}_${k}_${i}`).value)||0;
+        const b=g('disc')+g('slr')+g('slb')+g('cha')+g('fwd')+g('sub'),rm=g('railm');
+        document.getElementById(`t_${id}_res_w_${i}`).innerText=(rm-b-g('slw')).toFixed(0);
+        document.getElementById(`t_${id}_res_f_${i}`).innerText=(rm-b-g('slf')).toFixed(0);
+        document.getElementById(`t_${id}_res_s_${i}`).innerText=(rm-b-g('sls')).toFixed(0);
+        document.getElementById(`t_${id}_res_t_${i}`).innerText=(g('pub')-g('disc')-g('slr')).toLocaleString();
     }
 
-    function loadRecordFromDropdown() {
-        const idx = document.getElementById('cloudHistory').value;
-        if(idx === "-- Load Record --" || idx === "") return; // Changed behavior: no alert on empty, just return
-        loadSelectedRecord(idx);
+    function checkExpiryLogic(){
+        const b=Array.from(document.querySelectorAll('.table-block')),g={};
+        b.forEach(x=>{const i=x.id.split('_')[1],k=`${document.getElementById(`sl_${i}`).value}|${document.getElementById(`tt_${i}`).value}`;if(!g[k])g[k]=[];g[k].push({id:i})});
+        const td=new Date().toISOString().split('T')[0];
+        for(let k in g){g[k].forEach((x,i)=>{const last=i===g[k].length-1,dt=document.getElementById(`dt_${x.id}`).value,st=document.getElementById(`status_${x.id}`),hd=document.getElementById(`headerBox_${x.id}`);
+        if(!last||(dt&&dt<td)){st.innerText="EXPIRED";st.className="px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase w-full status-expired";hd.classList.replace('bg-[#1e293b]','bg-red-800')}else{st.innerText="Approved & Valid";st.className="px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase w-full status-valid";hd.classList.replace('bg-red-800','bg-[#1e293b]')}})}
     }
 
-    function findAndLoadCustomer(name) {
-        // 4. Do nothing on click visually (already handled by CSS cursor and removal of hover logic in render function)
-        // Just load the data
-        const matches = sheetRecords.filter(r => r.name.trim().toUpperCase() === name.trim().toUpperCase());
-        if (matches.length === 0) {
-            if(confirm(`No saved tariff sheet found for "${name}".\n\nDo you want to use this name for a NEW sheet?`)) { resetForm(true); document.getElementById('customerName').value = name.toUpperCase(); }
-            return;
-        }
-        matches.sort((a, b) => new Date(b.date) - new Date(a.date));
-        const index = sheetRecords.indexOf(matches[0]);
-        if(index !== -1) loadSelectedRecord(index);
+    function updateTableValues(id,pres=false){
+        const t=document.getElementById(`tt_${id}`).value||'FACTORY',l=document.getElementById(`sl_${id}`).value||'DEFAULT',s=subsidyData[t]||subsidyData['FACTORY'],o=lineData[l]||lineData['DEFAULT'];
+        if(!pres){slabs.forEach((_,i)=>{document.getElementById(`t_${id}_sub_${i}`).value=s[i]||"";document.getElementById(`t_${id}_slr_${i}`).value=o.rail[i]||"";document.getElementById(`t_${id}_slb_${i}`).value=o.bss[i]||"";document.getElementById(`t_${id}_slw_${i}`).value=o.wh[i]||"";document.getElementById(`t_${id}_slf_${i}`).value=o.fs[i]||"";document.getElementById(`t_${id}_sls_${i}`).value=o.self[i]||""})}
+        slabs.forEach((_,i)=>{document.getElementById(`t_${id}_lbl_${i}`).value=`${l}/${t}`;calcTableRow(id,i)});checkExpiryLogic();
     }
 
-    function captureFullData() {
-        // Ensure Prepared By is captured
-        const preparedByVal = document.getElementById('preparedByName').innerText || document.getElementById('currentUserDisplay').innerText;
-        
-        const basic = {
-            ref: document.getElementById('tariffNo').value,
-            date: document.getElementById('dateToday').value,
-            comm: document.getElementById('commodity').value,
-            cust: document.getElementById('customerName').value,
-            type: document.getElementById('customerType').value,
-            vol: document.getElementById('volMonth').value,
-            cred: document.getElementById('creditDays').value,
-            ver: document.getElementById('salesPerson').value,
-            bill: document.getElementById('billingTerms').value,
-            stream: document.getElementById('stream').value,
-            preparedBy: preparedByVal
-        };
-        const tables = [];
-        const docLinksArray = []; // To store all links for Column F
-
-        document.querySelectorAll('.table-block').forEach(block => {
-            const id = block.id.split('_')[1];
-            const rowData = [];
-            for(let i=0; i<7; i++) {
-                rowData.push({
-                    pub: document.getElementById(`t_${id}_pub_${i}`).value,
-                    railm: document.getElementById(`t_${id}_railm_${i}`).value,
-                    disc: document.getElementById(`t_${id}_disc_${i}`).value,
-                    slr: document.getElementById(`t_${id}_slr_${i}`).value,
-                    slb: document.getElementById(`t_${id}_slb_${i}`).value,
-                    slw: document.getElementById(`t_${id}_slw_${i}`).value,
-                    slf: document.getElementById(`t_${id}_slf_${i}`).value,
-                    sls: document.getElementById(`t_${id}_sls_${i}`).value,
-                    cha: document.getElementById(`t_${id}_cha_${i}`).value,
-                    fwd: document.getElementById(`t_${id}_fwd_${i}`).value,
-                    sub: document.getElementById(`t_${id}_sub_${i}`).value
-                });
-            }
-            
-            // Grab the link for this table
-            const linkVal = document.getElementById(`docLink_${id}`).value;
-            if(linkVal) docLinksArray.push(linkVal);
-
-            tables.push({
-                tt: document.getElementById(`tt_${id}`).value, sl: document.getElementById(`sl_${id}`).value,
-                df: document.getElementById(`df_${id}`).value, dt: document.getElementById(`dt_${id}`).value,
-                rem: document.getElementById(`tbl_rem_${id}`).value, rows: rowData,
-                docLink: linkVal // Save individual link inside table object
-            });
-        });
-        const transport = [];
-        document.querySelectorAll('#tbodyTransport tr').forEach(tr => {
-            const inputs = tr.querySelectorAll('input');
-            transport.push({ transporter: inputs[0].value, destination: tr.querySelector('select').value, d20: inputs[1].value, d40: inputs[2].value, remarks: tr.querySelector('textarea').value });
-        });
-        const incentives = [];
-        document.querySelectorAll('#tbodyIncentive tr').forEach(tr => {
-            const inputs = tr.querySelectorAll('input');
-            incentives.push({ line: inputs[0].value, d20: inputs[1].value, d40: inputs[2].value, remarks: tr.querySelector('textarea').value });
-        });
-        
-        // Return object with combined document link for Column F (comma separated)
-        return { 
-            basic, tables, transport, incentives, 
-            remarks: { thc: document.getElementById('remTHC').value, special: document.getElementById('remSpecial').value, add: document.getElementById('remAdd').value }, 
-            customers: customerList,
-            docLink: docLinksArray.join(', ') // All links in Column F
-        };
-    }
-
-    async function saveDataToSheet() {
-        if(!document.getElementById('customerName').value) return alert("Customer Name Required!");
-        if(!confirm(`Confirm ${editingRecordRef ? "Update" : "Save"}?`)) return;
-        document.getElementById('loadingOverlay').classList.remove('hidden');
-        document.getElementById('loadingOverlay').style.display = 'flex';
-        const fullData = captureFullData();
-        const payload = new FormData();
-        if (editingRecordRef) { payload.append("action", "edit"); payload.append("originalRef", editingRecordRef); } else { payload.append("action", "save"); }
-        payload.append("ref", fullData.basic.ref);
-        payload.append("name", fullData.basic.cust);
-        payload.append("date", fullData.basic.date);
-        payload.append("jsonData", JSON.stringify(fullData));
-        // Add docLink for Column F
-        payload.append("docLink", fullData.docLink);
-
-        try {
-            await fetch(CONFIG.SCRIPT_URL, { method: 'POST', body: payload, mode: 'no-cors' });
-            let p = 0;
-            const int = setInterval(()=>{
-                p+=10; document.getElementById('progressBar').style.width=p+'%'; document.getElementById('progressText').innerText=p+'%';
-                if(p>=100) {
-                    clearInterval(int); document.getElementById('progressSection').classList.add('hidden'); document.getElementById('successSection').classList.remove('hidden');
-                    const statusDiv = document.getElementById('mainStatus'); statusDiv.innerText = "Approved & Valid"; statusDiv.className = "input-field h-8 flex items-center justify-center font-bold text-[10px] uppercase rounded border text-center status-valid";
-                    
-                    disableAllInputs(true); 
-                    document.getElementById('saveBtn').classList.add('hidden'); 
-                    document.getElementById('unlockBtn').classList.remove('hidden'); 
-                    
-                    // --- REVERT: DISABLE ADD TABLE BUTTON ON SAVE (ORIGINAL LOGIC) ---
-                    document.getElementById('addTableBtn').disabled = true; 
-                    document.getElementById('addTableBtn').classList.add('opacity-50', 'cursor-not-allowed');
-                    
-                    editingRecordRef = fullData.basic.ref; fetchSheetData();
-                }
-            }, 200);
-        } catch(e) { alert("Save Error"); console.error(e); closeLoading(); }
-    }
-
-    function fetchSheetData() {
-        document.getElementById('syncStatus').innerText = "Syncing...";
-        window.handleGvizResponse = function(json) {
-            if (!json || !json.table) { document.getElementById('syncStatus').innerText = "Error"; return; }
-            sheetRecords = json.table.rows.map(r => {
-                const c = r.c; if (!c || c.length < 5) return null;
-                const jData = c[4]?.v || "";
-                
-                // --- FIX: VALIDATION ADDED HERE ---
-                if (!jData || typeof jData !== 'string' || !jData.trim().startsWith('{')) {
-                    return null;
-                }
-                
-                return { timestamp: c[0]?.v || "", ref: c[1]?.v || "", name: c[2]?.v || "", date: c[3]?.f || c[3]?.v || "", jsonData: jData };
-            }).filter(r => r !== null);
-            
-            sheetRecords.sort((a, b) => a.name.localeCompare(b.name));
-            const sel = document.getElementById('cloudHistory'); sel.innerHTML = '<option>-- Load Record --</option>';
-            sheetRecords.forEach((row, idx) => { const opt = document.createElement('option'); opt.value = idx; opt.text = row.name; sel.appendChild(opt); });
-            document.getElementById('syncStatus').innerHTML = `<span class="text-green-600">Total Sheets (${sheetRecords.length})</span>`;
-            const oldScript = document.getElementById('gviz_script'); if (oldScript) oldScript.remove(); delete window.handleGvizResponse;
-        };
-        const script = document.createElement('script'); script.id = 'gviz_script';
-        script.src = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=responseHandler:handleGvizResponse&tq=SELECT%20A,B,C,D,E`;
-        script.onerror = function() { document.getElementById('syncStatus').innerText = "Offline"; };
-        document.body.appendChild(script);
-    }
-
-    function loadSelectedRecord(idx) {
-        if(idx === "-- Load Record --") return;
-        const record = sheetRecords[idx];
-        if(!confirm(`Load data for ${record.name}? Current form will be cleared.`)) return;
-        try {
-            resetForm(true); const data = JSON.parse(record.jsonData); editingRecordRef = data.basic.ref;
-            
-            // Handle buttons based on logic
-            const user = document.getElementById('currentUserDisplay').innerText;
-            const isAdmin = ADMIN_USERS.includes(user);
-            
-            if (isAdmin) {
-                document.getElementById('saveBtn').classList.add('hidden'); document.getElementById('unlockBtn').classList.remove('hidden');
-                // --- REVERT: DISABLE ADD TABLE BUTTON ON LOAD (ORIGINAL LOGIC) ---
-                document.getElementById('addTableBtn').disabled = true; 
-                document.getElementById('addTableBtn').classList.add('opacity-50', 'cursor-not-allowed');
-            }
-            
-            document.getElementById('tariffNo').value = data.basic.ref; document.getElementById('dateToday').value = data.basic.date;
-            document.getElementById('commodity').value = data.basic.comm; document.getElementById('customerName').value = data.basic.cust;
-            document.getElementById('customerType').value = data.basic.type; document.getElementById('volMonth').value = data.basic.vol;
-            document.getElementById('creditDays').value = data.basic.cred; document.getElementById('salesPerson').value = data.basic.ver;
-            document.getElementById('billingTerms').value = data.basic.bill; document.getElementById('stream').value = data.basic.stream;
-            
-            if (data.basic.preparedBy) {
-                document.getElementById('preparedByName').innerText = data.basic.preparedBy;
-            }
-
-            checkCommodityColor();
-
-            const statusDiv = document.getElementById('mainStatus'); statusDiv.innerText = "Approved & Valid"; statusDiv.className = "input-field h-8 flex items-center justify-center font-bold text-[10px] uppercase rounded border text-center status-valid";
-            document.getElementById('remTHC').value = data.remarks.thc; document.getElementById('remSpecial').value = data.remarks.special; document.getElementById('remAdd').value = data.remarks.add;
-            document.getElementById('tablesContainer').innerHTML = ''; tableCounter = 0;
-            data.tables.forEach(tblData => {
-                addNewTableBlock(); const id = tableCounter;
-                document.getElementById(`tt_${id}`).value = tblData.tt; document.getElementById(`sl_${id}`).value = tblData.sl;
-                document.getElementById(`df_${id}`).value = tblData.df; document.getElementById(`dt_${id}`).value = tblData.dt;
-                document.getElementById(`tbl_rem_${id}`).value = tblData.rem;
-                
-                // Restore Doc Link for this table
-                if(tblData.docLink) {
-                    document.getElementById(`docLink_${id}`).value = tblData.docLink;
-                    document.getElementById(`uploadStatus_${id}`).innerHTML = `✅ <b>Document Attached</b>`;
-                    document.getElementById(`uploadStatus_${id}`).className = "text-xs font-bold text-green-600";
-                    document.getElementById(`previewBtn_${id}`).classList.remove('hidden');
-                }
-
-                tblData.rows.forEach((r, i) => {
-                    document.getElementById(`t_${id}_pub_${i}`).value = r.pub; document.getElementById(`t_${id}_railm_${i}`).value = r.railm;
-                    document.getElementById(`t_${id}_disc_${i}`).value = r.disc; document.getElementById(`t_${id}_slr_${i}`).value = r.slr;
-                    document.getElementById(`t_${id}_slb_${i}`).value = r.slb; document.getElementById(`t_${id}_slw_${i}`).value = r.slw;
-                    document.getElementById(`t_${id}_slf_${i}`).value = r.slf; document.getElementById(`t_${id}_sls_${i}`).value = r.sls;
-                    document.getElementById(`t_${id}_cha_${i}`).value = r.cha; document.getElementById(`t_${id}_fwd_${i}`).value = r.fwd;
-                    document.getElementById(`t_${id}_sub_${i}`).value = r.sub;
-                    calcTableRow(id, i);
-                });
-                updateTableValues(id, true);
-            });
-            document.getElementById('tbodyTransport').innerHTML = ''; data.transport.forEach(t => addTransportRow({t: t.transporter, d: t.destination, d20: t.d20, d40: t.d40, rem: t.remarks}));
-            document.getElementById('tbodyIncentive').innerHTML = ''; data.incentives.forEach(i => addIncentiveRow({l: i.line, d20: i.d20, d40: i.d40, rem: i.remarks}));
-            customerList = data.customers || []; renderCustomerList();
-            disableAllInputs(true); alert("Data Loaded in Read-Only Mode.");
-        } catch(e) { console.error(e); alert("Error parsing data."); }
-    }
-
-    function unlockForm() {
-        if (prompt("Enter Password to Edit:") === "4209211") {
-            disableAllInputs(false); document.getElementById('saveBtn').classList.remove('hidden'); document.getElementById('unlockBtn').classList.add('hidden');
-            document.getElementById('saveBtnText').innerText = "UPDATE"; document.getElementById('addTableBtn').disabled = false;
-            document.getElementById('addTableBtn').classList.remove('opacity-50', 'cursor-not-allowed'); alert("Form Unlocked.");
-        } else { alert("Incorrect Password!"); }
-    }
-
-    function disableAllInputs(disabled) {
-        document.querySelectorAll('input, select, textarea').forEach(el => {
-            // Keep Upload Inputs Enabled so user can see links
-            if (!['searchBox', 'cloudHistory', 'sidebarSearch'].includes(el.id) && !el.id.startsWith('reportFilter') && !el.id.startsWith('docLink_') && !el.id.startsWith('fileInput_')) {
-                el.disabled = disabled; 
-                el.classList.toggle('cursor-not-allowed', disabled);
-            }
-        });
-    }
-
-    function resetForm(skipConfirm=false) {
-        if(!skipConfirm && !confirm("Clear Form?")) return;
-        editingRecordRef = null; 
-        
-        const user = document.getElementById('currentUserDisplay').innerText;
-        const isAdmin = ADMIN_USERS.includes(user);
-        
-        if (isAdmin) {
-             document.getElementById('saveBtn').classList.remove('hidden'); 
-             document.getElementById('unlockBtn').classList.add('hidden');
-             document.getElementById('saveBtnText').innerText = "SAVE NEW"; 
-             document.getElementById('addTableBtn').disabled = false; 
-             document.getElementById('addTableBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-
-        const statusDiv = document.getElementById('mainStatus'); statusDiv.innerText = "-"; statusDiv.className = "input-field h-8 flex items-center justify-center font-bold text-[10px] uppercase rounded border text-center status-pending";
-        disableAllInputs(false); customerList = []; renderCustomerList();
-        document.getElementById('tablesContainer').innerHTML = ''; tableCounter = 0; addNewTableBlock();
-        document.getElementById('tbodyTransport').innerHTML = ''; addTransportRow(); document.getElementById('tbodyIncentive').innerHTML = ''; addIncentiveRow();
-        document.querySelectorAll('input[type="text"], textarea').forEach(i => i.value = '');
-        document.getElementById('tariffNo').value = `TS-${new Date().getFullYear()}${Math.floor(1000+Math.random()*9000)}`;
-        document.getElementById('dateToday').valueAsDate = new Date();
-        document.getElementById('salesPerson').value = ""; document.getElementById('commodity').value = ""; document.getElementById('billingTerms').value = "";
-        document.getElementById('customerType').value = ""; document.getElementById('stream').value = "Mundra - Kilaraipur";
-        
-        checkCommodityColor(); // Reset color
-
-        const loggedUser = document.getElementById('loginUser').value;
-        if(loggedUser) {
-            const salesDropdown = document.getElementById('salesPerson');
-            let inList = false;
-            for(let i=0; i<salesDropdown.options.length; i++){
-                if(salesDropdown.options[i].value === loggedUser) inList = true;
-            }
-            if(inList) salesDropdown.value = loggedUser;
-            
-            document.getElementById('preparedByName').innerText = loggedUser;
-        }
-    }
-
-    function closeLoading() { document.getElementById('loadingOverlay').style.display = 'none'; document.getElementById('progressSection').classList.remove('hidden'); document.getElementById('successSection').classList.add('hidden'); document.getElementById('progressBar').style.width = '0%'; }
-
-    function addNewTableBlock() {
-        tableCounter++; const id = tableCounter;
-        const div = document.createElement('div');
-        div.className = "table-block mb-16 border border-gray-600 bg-white pb-4 rounded p-2 shadow-sm";
-        div.id = `tableBlock_${id}`;
-        let rows = '';
-        slabs.forEach((slab, i) => {
-            const isHighlight = slab.label.includes('40" Upto - 20 MT') || slab.label.includes('40" Over - 20 MT');
-            const rowClass = isHighlight ? "highlight-row" : "";
-            rows += `<tr class="${rowClass}">
-                <td class="bg-yellow-100"><input type="text" id="t_${id}_lbl_${i}" class="font-bold text-blue-900 w-full" readonly></td>
-                <td class="font-bold bg-transparent whitespace-nowrap">${slab.label}</td>
-                <td><input type="number" id="t_${id}_pub_${i}" value="${slab.p}" readonly tabindex="-1"></td>
-                <td><input type="number" id="t_${id}_railm_${i}" value="${slab.m}" readonly tabindex="-1"></td>
-                <td><input type="number" id="t_${id}_disc_${i}" value="" oninput="calcTableRow(${id}, ${i})" class="bg-yellow-col"></td>
-                <td><input type="number" id="t_${id}_slr_${i}" value="" readonly tabindex="-1"></td>
-                <td><input type="number" id="t_${id}_slb_${i}" value="" readonly tabindex="-1"></td>
-                <!-- EDITED: Added class for styling and oninput event, removed readonly -->
-                <td><input type="number" id="t_${id}_slw_${i}" value="" oninput="calcTableRow(${id}, ${i})" class="bg-blue-50 font-bold text-blue-800"></td>
-                <td><input type="number" id="t_${id}_slf_${i}" value="" oninput="calcTableRow(${id}, ${i})" class="bg-blue-50 font-bold text-blue-800"></td>
-                <td><input type="number" id="t_${id}_sls_${i}" value="" oninput="calcTableRow(${id}, ${i})" class="bg-blue-50 font-bold text-blue-800"></td>
-                
-                <td><input type="number" id="t_${id}_cha_${i}" value="" oninput="calcTableRow(${id}, ${i})" class="bg-teal-col"></td>
-                <td><input type="number" id="t_${id}_fwd_${i}" value="" oninput="calcTableRow(${id}, ${i})" class="bg-teal-col"></td>
-                <td><input type="number" id="t_${id}_sub_${i}" value="" oninput="calcTableRow(${id}, ${i})" class="bg-yellow-col font-bold"></td>
-                <td class="bg-gray-col"><span id="t_${id}_res_w_${i}"></span></td>
-                <td class="bg-gray-col"><span id="t_${id}_res_f_${i}"></span></td>
-                <td class="bg-gray-col"><span id="t_${id}_res_s_${i}"></span></td>
-                <td class="bg-red-col"><span id="t_${id}_res_t_${i}"></span></td>
-            </tr>`;
-        });
-        
-        // --- ADDED UPLOAD BOX FOR EACH TABLE ---
-        const uploadHTML = `
-        <div class="upload-section-mini w-1/2 no-print">
-            <div class="upload-box-mini" onclick="triggerUpload(${id})">
-                <span style="font-size:18px;">📂</span> <span id="uploadStatus_${id}" class="text-xs font-bold text-gray-700">Upload Doc</span>
-            </div>
-            <input type="file" id="fileInput_${id}" style="display:none" onchange="uploadToCloudinary(this, ${id})">
-            <input type="hidden" id="docLink_${id}"> 
-            <div class="text-center mt-1">
-                <button type="button" id="previewBtn_${id}" class="bg-teal-600 text-white text-[10px] font-bold py-0.5 px-2 rounded hidden hover:bg-teal-700 shadow" onclick="openDocModal(${id})">
-                    <i class="fas fa-eye mr-1"></i> View
-                </button>
-            </div>
-        </div>`;
-
-        div.innerHTML = `${uploadHTML}
-        <div id="headerBox_${id}" class="grid grid-cols-5 gap-4 mb-2 bg-[#1e293b] p-2 rounded border border-gray-800 items-end"><div class="col-span-1 flex flex-col justify-end"><label class="block text-[10px] font-bold text-white uppercase mb-1">Current Status</label><div id="status_${id}" class="px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase status-valid w-full">Approved & Valid</div></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Tariff Type <span class="text-red-400">*</span></label><select id="tt_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-purple-50 text-purple-900 border-purple-300"><option value="">-- Select --</option><option value="FACTORY">FACTORY</option><option value="OWPL">OWPL</option><option value="PSWC">PSWC</option><option value="ADDITIONAL SUBSIDY">ADDITIONAL SUBSIDY</option></select></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Shipping Line <span class="text-red-400">*</span></label><select id="sl_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-white uppercase border-blue-500"><option value="">-- Select --</option>${Object.keys(lineData).map(k => `<option value="${k}">${k}</option>`).join('')}</select></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Effective From</label><input type="date" id="df_${id}" class="input-field h-8 bg-white"></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">End Date</label><input type="date" id="dt_${id}" class="input-field h-8 bg-white" onchange="updateTableValues(${id}, true)"></div></div><div class="mb-2"><textarea id="tbl_rem_${id}" class="w-full border border-black rounded p-1 text-xs bg-yellow-100 font-bold resize-none" rows="2" placeholder="Table specific remarks..."></textarea></div><div class="flex justify-end mb-1"><button onclick="if(confirm('Remove?')) { this.closest('.table-block').remove(); checkExpiryLogic(); }" class="text-red-500 font-bold text-xs hover:underline no-pdf"><i class="fas fa-trash"></i> Remove Table</button></div><div class="overflow-x-auto"><table class="tariff-table border border-gray-600"><thead class="th-main text-white"><tr><th class="w-32">Shipping Line /Tariff Type</th><th class="w-40">Weight Slab Per Container</th><th>Public Tariff</th><th>Rail Margins Including EIC</th><th class="bg-amber-600 border-amber-800">Discount on Railfreight</th><th>S/Line Discount Railfreight</th><th>S/Line Discount BSS</th><th>S/Line Discount WH Stuffing</th><th>S/Line Discount F/S Lock</th><th>S/Line Discount Self Seal</th><th class="bg-emerald-700 border-emerald-800">CHA Incentive</th><th class="bg-emerald-700 border-emerald-800">Forwarder Incentive</th><th>Transport Subsidy</th><th class="bg-slate-700 text-white border-slate-800">HTPL Margins WH</th><th class="bg-slate-700 text-white border-slate-800">HTPL Margins F/S Lock</th><th class="bg-slate-700 text-white border-slate-800">HTPL Margins Self Seal</th><th class="bg-red-700 text-white border-red-900">Revised Billing</th></tr></thead><tbody>${rows}</tbody></table></div>`;
-        document.getElementById('tablesContainer').appendChild(div);
+    function addNewTableBlock(){
+        tableCounter++;const id=tableCounter,div=document.createElement('div');div.className="table-block mb-16 border border-gray-600 bg-white pb-4 rounded p-2 shadow-sm";div.id=`tableBlock_${id}`;
+        let rows='';slabs.forEach((s,i)=>{rows+=`<tr class="${s.label.includes('40" Upto')||s.label.includes('40" Over')?'highlight-row':''}"><td class="bg-yellow-100"><input type="text" id="t_${id}_lbl_${i}" class="font-bold text-blue-900 w-full" readonly></td><td class="font-bold bg-transparent whitespace-nowrap">${s.label}</td><td><input type="number" id="t_${id}_pub_${i}" value="${s.p}" readonly tabindex="-1"></td><td><input type="number" id="t_${id}_railm_${i}" value="${s.m}" readonly tabindex="-1"></td><td><input type="number" id="t_${id}_disc_${i}" oninput="calcTableRow(${id},${i})" class="bg-yellow-col"></td><td><input type="number" id="t_${id}_slr_${i}" readonly tabindex="-1"></td><td><input type="number" id="t_${id}_slb_${i}" readonly tabindex="-1"></td><td><input type="number" id="t_${id}_slw_${i}" oninput="calcTableRow(${id},${i})" class="bg-blue-50 font-bold text-blue-800"></td><td><input type="number" id="t_${id}_slf_${i}" oninput="calcTableRow(${id},${i})" class="bg-blue-50 font-bold text-blue-800"></td><td><input type="number" id="t_${id}_sls_${i}" oninput="calcTableRow(${id},${i})" class="bg-blue-50 font-bold text-blue-800"></td><td><input type="number" id="t_${id}_cha_${i}" oninput="calcTableRow(${id},${i})" class="bg-teal-col"></td><td><input type="number" id="t_${id}_fwd_${i}" oninput="calcTableRow(${id},${i})" class="bg-teal-col"></td><td><input type="number" id="t_${id}_sub_${i}" oninput="calcTableRow(${id},${i})" class="bg-yellow-col font-bold"></td><td class="bg-gray-col"><span id="t_${id}_res_w_${i}"></span></td><td class="bg-gray-col"><span id="t_${id}_res_f_${i}"></span></td><td class="bg-gray-col"><span id="t_${id}_res_s_${i}"></span></td><td class="bg-red-col"><span id="t_${id}_res_t_${i}"></span></td></tr>`});
+        div.innerHTML=`<div class="upload-section-mini w-1/2 no-print"><div class="upload-box-mini" onclick="triggerUpload(${id})"><span style="font-size:18px;">📂</span> <span id="uploadStatus_${id}" class="text-xs font-bold text-gray-700">Upload Doc</span></div><input type="file" id="fileInput_${id}" style="display:none" onchange="uploadToCloudinary(this,${id})"><input type="hidden" id="docLink_${id}"><div class="text-center mt-1"><button type="button" id="previewBtn_${id}" class="bg-teal-600 text-white text-[10px] font-bold py-0.5 px-2 rounded hidden hover:bg-teal-700 shadow" onclick="openDocModal(${id})">View</button></div></div><div id="headerBox_${id}" class="grid grid-cols-5 gap-4 mb-2 bg-[#1e293b] p-2 rounded border border-gray-800 items-end"><div class="col-span-1 flex flex-col justify-end"><button onclick="addNewTableBlock()" class="bg-orange-500 text-white text-[10px] font-bold py-1 px-2 rounded uppercase shadow mb-1 w-full">Add Tariff Table</button><div id="status_${id}" class="px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase status-valid w-full">Approved & Valid</div></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Type *</label><select id="tt_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-purple-50 text-purple-900 border-purple-300"><option value="">-- Select --</option><option value="FACTORY">FACTORY</option><option value="OWPL">OWPL</option><option value="PSWC">PSWC</option><option value="ADDITIONAL SUBSIDY">ADDITIONAL SUBSIDY</option></select></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Line *</label><select id="sl_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-white uppercase border-blue-500"><option value="">-- Select --</option>${Object.keys(lineData).map(k=>`<option value="${k}">${k}</option>`).join('')}</select></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">From</label><input type="date" id="df_${id}" class="input-field h-8 bg-white"></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">To</label><input type="date" id="dt_${id}" class="input-field h-8 bg-white" onchange="updateTableValues(${id},true)"></div></div><div class="mb-2"><textarea id="tbl_rem_${id}" class="w-full border border-black rounded p-1 text-xs bg-yellow-100 font-bold resize-none" rows="2" placeholder="Table remarks..."></textarea></div><div class="flex justify-end mb-1"><button onclick="if(confirm('Remove?')){this.closest('.table-block').remove();checkExpiryLogic();}" class="text-red-500 font-bold text-xs hover:underline no-pdf">Remove Table</button></div><div class="overflow-x-auto"><table class="tariff-table border border-gray-600"><thead class="th-main text-white"><tr><th class="w-32">Line /Type</th><th class="w-40">Weight Slab</th><th>Public</th><th>Rail Margins</th><th class="bg-amber-600 border-amber-800">Discount Rail</th><th>Line Disc Rail</th><th>Line Disc BSS</th><th>Line Disc WH</th><th>Line Disc F/S</th><th>Line Disc Self</th><th class="bg-emerald-700 border-emerald-800">CHA Inc</th><th class="bg-emerald-700 border-emerald-800">Fwd Inc</th><th>Subsidy</th><th class="bg-slate-700 text-white border-slate-800">Margin WH</th><th class="bg-slate-700 text-white border-slate-800">Margin F/S</th><th class="bg-slate-700 text-white border-slate-800">Margin Self</th><th class="bg-red-700 text-white border-red-900">Billing</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+        const container = isApprovalMode ? document.getElementById('ap_tablesContainer') : document.getElementById('tablesContainer');
+        container.appendChild(div);
         updateTableValues(id);
     }
 
-    function updateTableValues(id, preserve=false) {
-        const type = document.getElementById(`tt_${id}`).value || 'FACTORY';
-        const line = document.getElementById(`sl_${id}`).value || 'DEFAULT';
-        const subArr = subsidyData[type] || subsidyData['FACTORY'];
-        const lineObj = lineData[line] || lineData['DEFAULT'];
-        const setVal = (elId, val) => {
-            const safeVal = (val === undefined || val === null) ? 0 : val;
-            document.getElementById(elId).value = safeVal === 0 ? "" : safeVal;
-        };
-        if(!preserve) {
-            slabs.forEach((_, i) => {
-                setVal(`t_${id}_sub_${i}`, subArr[i]);
-                setVal(`t_${id}_slr_${i}`, lineObj.rail[i]);
-                setVal(`t_${id}_slb_${i}`, lineObj.bss[i]);
-                setVal(`t_${id}_slw_${i}`, lineObj.wh[i]);
-                setVal(`t_${id}_slf_${i}`, lineObj.fs[i]);
-                setVal(`t_${id}_sls_${i}`, lineObj.self[i]);
-            });
-        }
-        slabs.forEach((_, i) => {
-            document.getElementById(`t_${id}_lbl_${i}`).value = `${line}/${type}`;
-            calcTableRow(id, i);
-        });
-        checkExpiryLogic();
+    function triggerUpload(id){document.getElementById(`fileInput_${id}`).click()}
+    function uploadToCloudinary(inp,id){
+        const f=inp.files[0];if(!f)return;
+        document.getElementById(`uploadStatus_${id}`).innerText="Uploading...";
+        const fd=new FormData();fd.append("file",f);fd.append("upload_preset",uploadPreset);
+        fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,{method:"POST",body:fd}).then(r=>r.json()).then(d=>{if(d.secure_url){document.getElementById(`docLink_${id}`).value=d.secure_url;document.getElementById(`uploadStatus_${id}`).innerText="✅ Attached";document.getElementById(`previewBtn_${id}`).classList.remove('hidden');}}).catch(e=>{alert("Upload Failed");});
     }
+    function openDocModal(id){const l=document.getElementById(`docLink_${id}`).value;if(!l)return;document.getElementById("fullDocLink").href=l;document.getElementById("downloadDocLink").href=l.replace('/upload/','/upload/fl_attachment/');document.getElementById("docModalBody").innerHTML=l.endsWith('.pdf')?`<iframe src="${l}" class="w-full h-[500px]"></iframe>`:`<img src="${l}" class="max-w-full max-h-[500px] mx-auto">`;document.getElementById("docPreviewModal").classList.remove('hidden');}
+    function closeDocModal(){document.getElementById("docPreviewModal").classList.add('hidden')}
 
-    function checkExpiryLogic() {
-        const blocks = Array.from(document.querySelectorAll('.table-block'));
-        const groups = {};
-        blocks.forEach(block => {
-            const id = block.id.split('_')[1]; const sl = document.getElementById(`sl_${id}`).value; const tt = document.getElementById(`tt_${id}`).value;
-            const key = `${sl}|${tt}`; if (!groups[key]) groups[key] = []; groups[key].push({ id, block });
-        });
-        const todayStr = new Date().toISOString().split('T')[0];
-        for (const key in groups) {
-            const tables = groups[key];
-            tables.forEach((item, index) => {
-                const isLast = index === tables.length - 1; const id = item.id;
-                const endDtVal = document.getElementById(`dt_${id}`).value; const stat = document.getElementById(`status_${id}`); const head = document.getElementById(`headerBox_${id}`);
-                let isExpired = false; let reason = "";
-                if (!isLast) { isExpired = true; reason = "EXPIRED (Replaced)"; } else if (endDtVal && endDtVal < todayStr) { isExpired = true; reason = "EXPIRED (Date)"; }
-                if (isExpired) { stat.innerText = reason; stat.className = "px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase w-full status-expired"; head.classList.remove('bg-[#1e293b]'); head.classList.add('bg-red-800'); } 
-                else { stat.innerText = "Approved & Valid"; stat.className = "px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase w-full status-valid"; head.classList.remove('bg-red-800'); head.classList.add('bg-[#1e293b]'); }
-            });
+    // --- MAIN FUNCTIONS ---
+    function attemptLogin(){
+        const u=document.getElementById('loginUser').value,p=document.getElementById('loginPass').value;
+        if(USER_DATABASE[u]&&USER_DATABASE[u].pass===p){
+            document.getElementById('login-screen').style.display='none';document.getElementById('appContent').style.display='flex';
+            const s=document.getElementById('salesPerson'),as=document.getElementById('ap_salesPerson');if(s)s.value=u;if(as)as.value=u;
+            document.getElementById('currentUserDisplay').innerText=u;document.getElementById('preparedByName').innerText=u;
+            const isAdmin=ADMIN_USERS.includes(u);
+            document.querySelectorAll('.admin-only').forEach(b=>b.classList.toggle('hidden-by-role',!isAdmin));
+            fetchSheetData();
+        }else{alert("Invalid Credentials");}
+    }
+    
+    function toggleApprovalMode(show, isFresh=false){
+        isApprovalMode=show;
+        const approvalListContainer = document.getElementById('approvalCustomerListContainer');
+        if(show){
+            document.getElementById('mainFormContainer').style.display='none';
+            document.getElementById('approvalContainer').style.display='flex';
+            // Show horizontal list in approval mode
+            if(approvalListContainer) approvalListContainer.classList.remove('hidden');
+            
+            if(isFresh) {
+                resetApprovalState();
+                setTemplateNewApproval(); // Default text
+            } else {
+                syncMainToApproval();
+            }
+        }else{
+            document.getElementById('mainFormContainer').style.display='block';
+            document.getElementById('approvalContainer').style.display='none';
+            // Hide horizontal list
+            if(approvalListContainer) approvalListContainer.classList.add('hidden');
         }
     }
-
-    function calcTableRow(id, i) {
-        const getVal = (key) => parseFloat(document.getElementById(`t_${id}_${key}_${i}`).value) || 0;
-        const railM = getVal('railm'); const disc = getVal('disc');
-        const slr = getVal('slr'); const slb = getVal('slb');
-        const cha = getVal('cha'); const fwd = getVal('fwd'); const sub = getVal('sub');
-        const baseDeductions = disc + slr + slb + cha + fwd + sub;
-        const margWH = railM - baseDeductions - getVal('slw');
-        const margFS = railM - baseDeductions - getVal('slf');
-        const margSelf = railM - baseDeductions - getVal('sls');
+    
+    // NEW: Copy Data to Approval Form Tables
+    function syncMainToApproval(){
+        const map={'commodity':'ap_commodity','customerName':'ap_customerName','customerType':'ap_customerType','volMonth':'ap_volMonth','creditDays':'ap_creditDays','salesPerson':'ap_salesPerson','billingTerms':'ap_billingTerms','stream':'ap_stream','remTHC':'ap_remTHC','remSpecial':'ap_remSpecial','remAdd':'ap_remAdd'};
+        for(let k in map)document.getElementById(map[k]).value=document.getElementById(k).value;
         
-        // --- UPDATED CALCULATION FOR REVISED TARIFF FOR BILLING ---
-        // Formula: Public Tariff - Discount on Railfreight - S/Line Discount Railfreight
-        const bill = getVal('pub') - disc - slr;
-
-        document.getElementById(`t_${id}_res_w_${i}`).innerText = margWH === 0 ? "" : margWH.toFixed(0);
-        document.getElementById(`t_${id}_res_f_${i}`).innerText = margFS === 0 ? "" : margFS.toFixed(0);
-        document.getElementById(`t_${id}_res_s_${i}`).innerText = margSelf === 0 ? "" : margSelf.toFixed(0);
-        document.getElementById(`t_${id}_res_t_${i}`).innerText = bill === 0 ? "" : bill.toLocaleString();
-    }
-
-    // 2. Remarks Box Double Size (rows="2")
-    function addTransportRow(d={}) { const tr = document.createElement('tr'); const sel = (v,o) => v===o?'selected':''; tr.innerHTML = `<td><input type="text" class="font-bold w-full uppercase" value="${d.transporter||'TRANSPORTER'}"></td><td>Kilaraipur</td><td><select class="font-bold w-full"><option ${sel(d.d,'Ludhiana')}>Ludhiana</option><option ${sel(d.d,'Mandi')}>Mandi</option></select></td><td><input type="number" class="font-bold w-full" value="${d.d20||''}"></td><td><input type="number" class="font-bold w-full" value="${d.d40||''}"></td><td><textarea class="w-full font-bold resize-none" rows="2">${d.rem||''}</textarea></td><td class="no-print"><button onclick="this.closest('tr').remove()" class="text-red-500 no-pdf"><i class="fas fa-times"></i></button></td>`; document.getElementById('tbodyTransport').appendChild(tr); }
-    // 2. Remarks Box Double Size (rows="2")
-    function addIncentiveRow(d={}) { const tr = document.createElement('tr'); tr.innerHTML = `<td><input type="text" class="font-bold w-full uppercase" value="${d.line||'MSC'}"></td><td><input type="number" class="font-bold w-full" value="${d.d20||''}"></td><td><input type="number" class="font-bold w-full" value="${d.d40||''}"></td><td><textarea class="font-bold w-full resize-none" rows="2">${d.rem||''}</textarea></td><td class="no-print"><button onclick="this.closest('tr').remove()" class="text-red-500 no-pdf"><i class="fas fa-times"></i></button></td>`; document.getElementById('tbodyIncentive').appendChild(tr); }
-    function copyToClipboard() { document.body.style.zoom = "100%"; const e = document.getElementById('printArea'); e.classList.add('pdf-mode'); html2canvas(e, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => { canvas.toBlob(blob => { navigator.clipboard.write([new ClipboardItem({'image/png': blob})]).then(() => { alert("Image Copied to Clipboard!"); document.body.style.zoom = "90%"; e.classList.remove('pdf-mode'); }).catch(err => { alert("Failed to copy image: " + err); document.body.style.zoom = "90%"; e.classList.remove('pdf-mode'); }); }); }).catch(err => { e.classList.remove('pdf-mode'); document.body.style.zoom = "90%"; }); }
-    function downloadPDF() { const e = document.getElementById('printArea'); e.classList.add('pdf-mode'); html2pdf().set({ margin: 5, filename: 'Tariff.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }, pagebreak: { mode: 'avoid-all', avoid: '.table-block' } }).from(e).save().then(() => { e.classList.remove('pdf-mode'); }); }
-    function openCustomerModal() { document.getElementById('customerModal').classList.remove('hidden'); document.getElementById('customerModal').style.display='flex'; }
-    function closeCustomerModal() { document.getElementById('customerModal').classList.add('hidden'); document.getElementById('customerModal').style.display='none'; }
-    function saveBulkCustomers() { const input = document.getElementById('bulkCustomerInput').value; if(input) input.split(',').forEach(n => { if(n.trim() && !customerList.some(c=>c.name===n.trim())) customerList.push({name:n.trim(), date:new Date().toLocaleDateString()}); }); renderCustomerList(); closeCustomerModal(); }
-    
-    // 4. Update Render Customer List (Orange Strips)
-    function renderCustomerList() { 
-        document.getElementById('customerList').innerHTML = customerList.map((c, index) => {
-            const bgClass = index % 2 === 0 ? 'bg-orange-200' : 'bg-orange-50';
-            return `<li class="py-1 px-2 border-b text-[10px] flex justify-between customer-item rounded ${bgClass}" onclick="findAndLoadCustomer('${c.name}')"><span class="font-bold text-gray-700">${c.name}</span> <span class="text-[9px] text-gray-400">${c.date||''}</span></li>`;
-        }).join(''); 
-    }
-    
-    function openReportModal() { document.getElementById('reportModal').classList.remove('hidden'); document.getElementById('reportModal').style.display = 'flex'; document.getElementById('reportContent').innerHTML = `<p class="text-center text-gray-500 mt-20">Select filters above and click <b>'Master Tariff Report'</b> to view data.</p>`; populateReportFilters(); }
-    function closeReportModal() { document.getElementById('reportModal').classList.add('hidden'); document.getElementById('reportModal').style.display = 'none'; }
-    function populateReportFilters() {
-        const custSelect = document.getElementById('reportFilterCustomerSelect'); const salesFilter = document.getElementById('reportFilterSales'); const commFilter = document.getElementById('reportFilterComm'); const lineFilter = document.getElementById('reportFilterLine'); const typeFilter = document.getElementById('reportFilterType');
-        custSelect.innerHTML = '<option value="">All Customers</option>'; salesFilter.innerHTML = '<option value="">All Sales Persons</option>'; commFilter.innerHTML = '<option value="">All Commodities</option>'; lineFilter.innerHTML = '<option value="">All Shipping Lines</option>'; typeFilter.innerHTML = '<option value="">All Tariff Types</option>';
-        const uniqueCust = new Set(); const uniqueSales = new Set(); const uniqueComm = new Set(); const uniqueLine = new Set(); const uniqueType = new Set();
-        sheetRecords.forEach(rec => { try { const d = JSON.parse(rec.jsonData); if(d.basic.cust) uniqueCust.add(d.basic.cust); if(d.basic.ver) uniqueSales.add(d.basic.ver); if(d.basic.comm) uniqueComm.add(d.basic.comm); if(d.tables) { d.tables.forEach(t => { if(t.sl) uniqueLine.add(t.sl); if(t.tt) uniqueType.add(t.tt); }); } } catch(e){} });
-        Array.from(uniqueCust).sort().forEach(c => custSelect.innerHTML += `<option value="${c}">${c}</option>`); Array.from(uniqueSales).sort().forEach(s => salesFilter.innerHTML += `<option value="${s}">${s}</option>`); Array.from(uniqueComm).sort().forEach(c => commFilter.innerHTML += `<option value="${c}">${c}</option>`); Array.from(uniqueLine).sort().forEach(l => lineFilter.innerHTML += `<option value="${l}">${l}</option>`); Array.from(uniqueType).sort().forEach(t => typeFilter.innerHTML += `<option value="${t}">${t}</option>`);
-    }
-    function resetReportFilters() { document.getElementById('reportFilterCustomerSelect').value = ""; document.getElementById('reportFilterSales').value = ""; document.getElementById('reportFilterComm').value = ""; document.getElementById('reportFilterCust').value = ""; document.getElementById('reportFilterLine').value = ""; document.getElementById('reportFilterType').value = ""; document.getElementById('reportContent').innerHTML = `<p class="text-center text-gray-500 mt-20">Select filters above and click <b>'Master Tariff Report'</b> to view data.</p>`; }
-    function generateMasterReport() {
-        const contentDiv = document.getElementById('reportContent'); if(!contentDiv || sheetRecords.length === 0) return contentDiv.innerHTML = "<p class='p-4 text-gray-800'>No data loaded. Please sync first.</p>";
-        const elCustSelect = document.getElementById('reportFilterCustomerSelect'); const elSales = document.getElementById('reportFilterSales'); const elComm = document.getElementById('reportFilterComm'); const elCust = document.getElementById('reportFilterCust'); const elLine = document.getElementById('reportFilterLine'); const elType = document.getElementById('reportFilterType');
-        const custSelectVal = elCustSelect ? elCustSelect.value : ""; const salesVal = elSales ? elSales.value : ""; const commVal = elComm ? elComm.value : ""; const custVal = elCust ? elCust.value.trim().toLowerCase() : ""; const lineVal = elLine ? elLine.value : ""; const typeVal = elType ? elType.value : "";
-        let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">`; let count = 0;
-        sheetRecords.forEach(rec => {
-            try {
-                const d = JSON.parse(rec.jsonData); if(!d || !d.basic) return;
-                const custJson = d.basic.cust || "UNKNOWN"; const custCol = rec.name || ""; const sales = d.basic.ver || "-"; const comm = d.basic.comm || "";
-                if(custSelectVal && custJson !== custSelectVal) return; if(salesVal && sales !== salesVal) return; if(commVal && comm !== commVal) return;
-                if(custVal) { const matchBasic = (custJson.toLowerCase().includes(custVal)) || (custCol.toLowerCase().includes(custVal)); const matchSidebar = d.customers && Array.isArray(d.customers) && d.customers.some(c => c.name && c.name.toLowerCase().includes(custVal)); if(!matchBasic && !matchSidebar) return; }
-                const validTables = d.tables.filter(tbl => { if (lineVal && tbl.sl !== lineVal) return false; if (typeVal && tbl.tt !== typeVal) return false; return true; });
-                if (validTables.length === 0) return;
-                let transHtml = d.transport.length > 0 ? d.transport.map(t => `<div class="text-[9px] border-b border-orange-200 pb-1 mb-1"><span class="font-bold text-orange-900">${t.transporter}</span> | ${t.destination} | <span class="font-bold">20":${t.d20}</span> | <span class="font-bold">40":${t.d40}</span></div>`).join('') : `<span class="text-[9px] text-gray-400">No Transport</span>`;
-                let incHtml = d.incentives.length > 0 ? d.incentives.map(i => `<div class="text-[9px] border-b border-orange-200 pb-1 mb-1"><span class="font-bold text-orange-900">${i.line}</span> | 20":${i.d20} | 40":${i.d40}</div>`).join('') : `<span class="text-[9px] text-gray-400">No Incentives</span>`;
-                validTables.forEach(tbl => {
-                    count++; const lineType = `${tbl.sl} / ${tbl.tt}`; const endDate = tbl.dt || "N/A";
-                    html += `<div class="report-card bg-white shadow-md border border-orange-300 flex flex-col h-full"><div class="report-header bg-orange-700 text-white p-2 flex justify-between items-start"><div class="flex flex-col overflow-hidden w-3/4"><span class="text-xs font-bold truncate" title="${custJson}">${custJson}</span><span class="text-[10px] opacity-80 truncate">${comm}</span></div><div class="flex flex-col items-end"><span class="bg-orange-900 px-1.5 py-0.5 rounded text-[9px] mb-0.5">${sales}</span><span class="text-[9px] font-bold text-orange-100">${endDate}</span></div></div><div class="bg-orange-100 px-2 py-1 border-b border-orange-200 flex justify-between items-center"><span class="text-xs font-extrabold text-orange-900">${lineType}</span></div><div class="grid grid-cols-2 gap-2 p-2 bg-orange-50 border-b border-orange-200 text-[9px]"><div><strong class="text-orange-800">Transport:</strong><div class="mt-0.5">${transHtml}</div></div><div><strong class="text-orange-800">Incentive:</strong><div class="mt-0.5">${incHtml}</div></div></div><div class="p-2 flex-1 overflow-auto"><table class="report-table w-full text-[9px] text-left border-collapse border border-orange-300"><thead><tr class="bg-orange-200"><th class="p-1 border border-orange-300 text-black font-bold">Slab</th><th class="p-1 border border-orange-300 text-black text-center">Rail</th><th class="p-1 border border-orange-300 text-black text-center">CHA</th><th class="p-1 border border-orange-300 text-black text-center">Fwd</th><th class="p-1 border border-orange-300 text-black text-center font-bold">Sub</th></tr></thead><tbody>`;
-                    tbl.rows.forEach((row, idx) => {
-                        const slabLabel = slabs[idx].label.replace('20" ', '').replace('40" ', '');
-                        let rowClass = ""; const fullLabel = slabs[idx].label; if (fullLabel.includes('40" Over - 20 MT') || fullLabel.includes('40" Upto - 20 MT')) { rowClass = "bg-orange-100 font-semibold"; }
-                        html += `<tr class="${rowClass} border-b border-orange-100 hover:bg-orange-50"><td class="p-1 border-r border-orange-200 whitespace-nowrap">${slabLabel}</td><td class="p-1 border-r border-orange-200 text-center font-bold">${row.disc}</td><td class="p-1 border-r border-orange-200 text-center">${row.cha}</td><td class="p-1 border-r border-orange-200 text-center">${row.fwd}</td><td class="p-1 text-center font-bold text-orange-800">${row.sub}</td></tr>`;
-                    });
-                    html += `</tbody></table></div></div>`;
-                });
-            } catch(e) { console.error("Report Row Error", e); }
+        // Move Tables
+        document.querySelectorAll('.table-block').forEach(t=>document.getElementById('ap_tablesContainer').appendChild(t));
+        
+        // SYNC Transport Table to Approval
+        const tBodyMain = document.getElementById('tbodyTransport');
+        document.getElementById('tbodyTransport_ap').innerHTML = "";
+        tBodyMain.querySelectorAll('tr').forEach(tr => {
+            const inputs = tr.querySelectorAll('input');
+            const selects = tr.querySelectorAll('select');
+            const txt = tr.querySelector('textarea');
+            addTransportRow({
+                t: inputs[0].value,
+                d: selects[0].value,
+                d20: inputs[1].value,
+                d40: inputs[2].value,
+                rem: txt.value
+            }, 'tbodyTransport_ap');
         });
-        html += `</div>`; if (count === 0) html = "<p class='p-4 text-center text-gray-500'>No records found for the selected filters.</p>"; contentDiv.innerHTML = html;
-    }
-    function generateSalesSummary() {
-        if(sheetRecords.length === 0) return; const summary = {};
-        sheetRecords.forEach(rec => { try { const d = JSON.parse(rec.jsonData); const sp = d.basic.ver || "Unknown"; const vol = parseInt(d.basic.vol) || 0; if(!summary[sp]) summary[sp] = { count: 0, vol: 0, customers: [] }; summary[sp].count++; summary[sp].vol += vol; if(!summary[sp].customers.includes(d.basic.cust)) summary[sp].customers.push(d.basic.cust); } catch(e) {} });
-        let html = `<h3 class="text-lg font-bold mb-4 text-black">Sales Person Performance</h3><table class="report-table w-full text-sm border-collapse border border-gray-400" id="salesTable"><thead><tr><th class="p-2 border border-gray-400 bg-gray-200 text-black">Sales Person</th><th class="p-2 border border-gray-400 bg-gray-200 text-black">Total Customers</th><th class="p-2 border border-gray-400 bg-gray-200 text-black">Total Volume (TEUs)</th><th class="p-2 border border-gray-400 bg-gray-200 text-black">Avg Vol/Cust</th></tr></thead><tbody>`;
-        Object.keys(summary).sort().forEach(key => { const row = summary[key]; const avg = row.count > 0 ? (row.vol / row.count).toFixed(0) : 0; html += `<tr><td class="p-2 border border-gray-300 font-bold text-black">${key}</td><td class="p-2 border border-gray-300 text-center text-black">${row.count}</td><td class="p-2 border border-gray-300 text-center bg-blue-50 font-bold text-black">${row.vol}</td><td class="p-2 border border-gray-300 text-center text-black">${avg}</td></tr>`; });
-        html += `</tbody></table>`; document.getElementById('reportContent').innerHTML = html;
-    }
-    function generateExpiryReport() {
-        const today = new Date(); const next30 = new Date(); next30.setDate(today.getDate() + 30);
-        let html = `<h3 class="text-lg font-bold mb-4 text-red-600">Tariffs Expiring Soon (Next 30 Days)</h3><table class="report-table w-full text-sm border-collapse border border-gray-400" id="expiryTable"><thead><tr><th class="p-2 border border-gray-400 bg-gray-200 text-black">Customer</th><th class="p-2 border border-gray-400 bg-gray-200 text-black">Sales Person</th><th class="p-2 border border-gray-400 bg-gray-200 text-black">Line / Type</th><th class="p-2 border border-gray-400 bg-gray-200 text-black">Expiry Date</th><th class="p-2 border border-gray-400 bg-gray-200 text-black">Days Left</th></tr></thead><tbody>`;
-        let found = false;
-        sheetRecords.forEach(rec => { try { const d = JSON.parse(rec.jsonData); d.tables.forEach(tbl => { if(tbl.dt) { const expDate = new Date(tbl.dt); if (expDate >= today && expDate <= next30) { found = true; const diff = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24)); html += `<tr><td class="p-2 border border-gray-300 font-bold text-black">${d.basic.cust}</td><td class="p-2 border border-gray-300 text-black">${d.basic.ver}</td><td class="p-2 border border-gray-300 text-black">${tbl.sl} / ${tbl.tt}</td><td class="p-2 border border-gray-300 font-mono font-bold text-red-600">${tbl.dt}</td><td class="p-2 border border-gray-300 text-center font-bold text-black">${diff} Days</td></tr>`; } } }); } catch(e){} });
-        if(!found) html += `<tr><td colspan="5" class="p-4 text-center text-gray-500">No tariffs expiring in the next 30 days.</td></tr>`; html += `</tbody></table>`; document.getElementById('reportContent').innerHTML = html;
-    }
-    function exportReportToExcel() {
-        if(sheetRecords.length === 0) return alert("Please generate a report first.");
-        const elCustSelect = document.getElementById('reportFilterCustomerSelect'); const elSales = document.getElementById('reportFilterSales'); const elComm = document.getElementById('reportFilterComm'); const elCust = document.getElementById('reportFilterCust'); const elLine = document.getElementById('reportFilterLine'); const elType = document.getElementById('reportFilterType');
-        const custSelectVal = elCustSelect ? elCustSelect.value : ""; const salesVal = elSales ? elSales.value : ""; const commVal = elComm ? elComm.value : ""; const custVal = elCust ? elCust.value.trim().toLowerCase() : ""; const lineVal = elLine ? elLine.value : ""; const typeVal = elType ? elType.value : "";
-        const flatData = []; flatData.push(["Customer Name", "Sales Person", "Commodity", "Ship Line / Tariff", "Weight Slab", "Disc Rail (₹)", "CHA Inc", "Fwd Inc", "Trans Sub", "Transporter", "Trans Disc 20\"", "Trans Disc 40\"", "Incentive Line", "Inc 20\"", "Inc 40\"", "End Date"]);
-        sheetRecords.forEach(rec => {
-            try {
-                const d = JSON.parse(rec.jsonData); if(!d || !d.basic) return;
-                const custJson = d.basic.cust || ""; const custCol = rec.name || ""; const sales = d.basic.ver || ""; const comm = d.basic.comm || "";
-                if(custSelectVal && custJson !== custSelectVal) return; if(salesVal && sales !== salesVal) return; if(commVal && comm !== commVal) return;
-                if(custVal) { const matchBasic = (custJson.toLowerCase().includes(custVal)) || (custCol.toLowerCase().includes(custVal)); const matchSidebar = d.customers && Array.isArray(d.customers) && d.customers.some(c => c.name && c.name.toLowerCase().includes(custVal)); if(!matchBasic && !matchSidebar) return; }
-                let transStr = d.transport.map(t => t.transporter).join(', '); let transD20 = d.transport.map(t => t.d20).join(', '); let transD40 = d.transport.map(t => t.d40).join(', ');
-                let incStr = d.incentives.map(i => i.line).join(', '); let incD20 = d.incentives.map(i => i.d20).join(', '); let incD40 = d.incentives.map(i => i.d40).join(', ');
-                d.tables.forEach(tbl => {
-                    if (lineVal && tbl.sl !== lineVal) return; if (typeVal && tbl.tt !== typeVal) return;
-                    const lineType = `${tbl.sl} / ${tbl.tt}`; const endDate = tbl.dt || "";
-                    tbl.rows.forEach((row, idx) => { const slabLabel = slabs[idx].label; flatData.push([ custJson, sales, comm, lineType, slabLabel, row.disc, row.cha, row.fwd, row.sub, transStr, transD20, transD40, incStr, incD20, incD40, endDate ]); });
-                });
-            } catch(e) { console.error("Export Error", e); }
+
+        // SYNC Incentive Table to Approval
+        const iBodyMain = document.getElementById('tbodyIncentive');
+        document.getElementById('tbodyIncentive_ap').innerHTML = "";
+        iBodyMain.querySelectorAll('tr').forEach(tr => {
+            const inputs = tr.querySelectorAll('input');
+            const txt = tr.querySelector('textarea');
+            addIncentiveRow({
+                l: inputs[0].value,
+                d20: inputs[1].value,
+                d40: inputs[2].value,
+                rem: txt.value
+            }, 'tbodyIncentive_ap');
         });
-        const ws = XLSX.utils.aoa_to_sheet(flatData); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Master Tariff Report"); XLSX.writeFile(wb, 'Master_Tariff_Report.xlsx');
     }
-    function sendEmail() {
-        const cust = document.getElementById('customerName').value; if (!cust) return alert("Please load a customer record first.");
-        let endDate = ""; const dateInput = document.querySelector('input[type="date"][id^="dt_"]'); if (dateInput && dateInput.value) { endDate = dateInput.value; } else { endDate = "As per sheet"; }
-        const to = "Sumit.Thakur@hindterminals.com,Sukhwinder.Singh@hindterminals.com,Sourabh.Verma@hindterminals.com";
-        const cc = "Marketing.Ludhiana@hindterminals.com,rajeev.sharma@hindterminals.com,Customerserviceludhiana@hindterminals.com,Siddharth.Nyati@hindterminals.com,Vivek.Srivastava@hindterminals.com,Devender.Sharma@hindterminals.com";
-        const subject = `Cost Sheet - ${cust}`; const body = `Dear Sir,%0D%0A%0D%0APlease find attached tariff sheet of "${cust}" (Valid till: ${endDate})%0D%0A%0D%0AThanks & Regards`;
-        window.location.href = `mailto:${to}?cc=${cc}&subject=${subject}&body=${body}`;
+
+    // NEW: Refresh Button Logic
+    function refreshApproval() {
+        if(!confirm("Start Fresh Approval?")) return;
+        resetApprovalState();
+        setTemplateNewApproval();
     }
+
+    // Shared Helper to Reset Approval View
+    function resetApprovalState() {
+        // 1. Clear Inputs
+        document.querySelectorAll('#approvalContainer input, #approvalContainer textarea, #approvalContainer select').forEach(el => {
+           if(el.id !== 'approvalHistory' && el.id !== 'allTariffHistory' && el.id !== 'approvalEmailBody') el.value = ""; 
+        });
+        // 2. Clear Static Tables
+        document.getElementById('tbodyTransport_ap').innerHTML = "";
+        document.getElementById('tbodyIncentive_ap').innerHTML = "";
+        // Add one empty row for convenience in Fresh Mode
+        addTransportRow({}, 'tbodyTransport_ap');
+        addIncentiveRow({}, 'tbodyIncentive_ap');
+        
+        // 3. Clear Dynamic Tables
+        document.getElementById('ap_tablesContainer').innerHTML = ""; 
+        
+        // 4. Add One Empty Tariff Table
+        addNewTableBlock(); 
+
+        // 5. Clear Customer List
+        customerList = [];
+        renderCustomerList();
+
+        // 6. Make Editable
+        disableAllInputs(false);
+    }
+
+    function captureFullData(){
+        const p=isApprovalMode?'ap_':'';
+        const basic={ref:document.getElementById('tariffNo').value,date:document.getElementById('dateToday').value,comm:getVal(p+'commodity'),cust:getVal(p+'customerName'),type:getVal(p+'customerType'),vol:getVal(p+'volMonth'),cred:getVal(p+'creditDays'),ver:getVal(p+'salesPerson'),bill:getVal(p+'billingTerms'),stream:getVal(p+'stream'),preparedBy:document.getElementById('preparedByName').innerText};
+        const tables=[]; const docLinks=[];
+        document.querySelectorAll('.table-block').forEach(b=>{
+            const id=b.id.split('_')[1],rows=[];
+            for(let i=0;i<7;i++)rows.push({pub:document.getElementById(`t_${id}_pub_${i}`).value,railm:document.getElementById(`t_${id}_railm_${i}`).value,disc:document.getElementById(`t_${id}_disc_${i}`).value,slr:document.getElementById(`t_${id}_slr_${i}`).value,slb:document.getElementById(`t_${id}_slb_${i}`).value,slw:document.getElementById(`t_${id}_slw_${i}`).value,slf:document.getElementById(`t_${id}_slf_${i}`).value,sls:document.getElementById(`t_${id}_sls_${i}`).value,cha:document.getElementById(`t_${id}_cha_${i}`).value,fwd:document.getElementById(`t_${id}_fwd_${i}`).value,sub:document.getElementById(`t_${id}_sub_${i}`).value});
+            const dl=document.getElementById(`docLink_${id}`).value; if(dl)docLinks.push(dl);
+            tables.push({tt:document.getElementById(`tt_${id}`).value,sl:document.getElementById(`sl_${id}`).value,df:document.getElementById(`df_${id}`).value,dt:document.getElementById(`dt_${id}`).value,rem:document.getElementById(`tbl_rem_${id}`).value,rows:rows,docLink:dl});
+        });
+        
+        // Capture specific tables based on mode
+        let transport=[], incentives=[];
+        if(isApprovalMode) {
+            document.querySelectorAll('#tbodyTransport_ap tr').forEach(tr=>{
+                const inputs=tr.querySelectorAll('input');
+                const select=tr.querySelector('select');
+                let dest = ""; let d20 = ""; let d40 = "";
+                // Handle different structures (Fresh/Dropdown vs Synced/Input)
+                if(select) { dest = select.value; d20 = inputs[1].value; d40 = inputs[2].value; } 
+                else { dest = inputs[1].value; d20 = inputs[2].value; d40 = inputs[3].value; }
+                
+                transport.push({transporter:inputs[0].value,destination:dest,d20:d20,d40:d40,remarks:tr.querySelector('textarea').value})
+            });
+            document.querySelectorAll('#tbodyIncentive_ap tr').forEach(tr=>{const i=tr.querySelectorAll('input');incentives.push({line:i[0].value,d20:i[1].value,d40:i[2].value,remarks:tr.querySelector('textarea').value})});
+        } else {
+            document.querySelectorAll('#tbodyTransport tr').forEach(tr=>{const i=tr.querySelectorAll('input');transport.push({transporter:i[0].value,destination:tr.querySelector('select').value,d20:i[1].value,d40:i[2].value,remarks:tr.querySelector('textarea').value})});
+            document.querySelectorAll('#tbodyIncentive tr').forEach(tr=>{const i=tr.querySelectorAll('input');incentives.push({line:i[0].value,d20:i[1].value,d40:i[2].value,remarks:tr.querySelector('textarea').value})});
+        }
+
+        // --- NEW: Add Approval Tag ---
+        // If saving from Main Form (Update Mode), isApproval MUST be false
+        // If saving from Approval Mode, isApproval MUST be true
+        const isApp = isApprovalMode;
+
+        return {basic,tables,transport,incentives,remarks:{thc:getVal(p+'remTHC'),special:getVal(p+'remSpecial'),add:getVal(p+'remAdd')},customers:customerList,docLink:docLinks.join(', '), isApproval: isApp};
+    }
+
+    async function saveDataToSheet(mode = 'auto'){
+        // Validation for Approval Mode
+        if (isApprovalMode) {
+             const isReadOnly = document.getElementById('ap_customerName').disabled;
+             if (isReadOnly) {
+                 alert("Form is in Read-Only mode.\n\n- Click 'Refresh' to create a NEW Approval Request.\n- Click 'Unlock' (Admins only) to edit this record.");
+                 return;
+             }
+             const requiredMap = {
+                 'ap_commodity': 'Commodity',
+                 'ap_customerName': 'Customer Name',
+                 'ap_customerType': 'Customer Type',
+                 'ap_volMonth': 'Vol / Month',
+                 'ap_creditDays': 'Credit Days',
+                 'ap_salesPerson': 'Sales Person',
+                 'ap_billingTerms': 'Billing Terms'
+             };
+             let missingFields = [];
+             for (const [id, label] of Object.entries(requiredMap)) {
+                 const el = document.getElementById(id);
+                 if (!el || !el.value.trim()) {
+                     missingFields.push(label);
+                     el.classList.add('border-red-500', 'border-2');
+                 } else {
+                     el.classList.remove('border-red-500', 'border-2');
+                 }
+             }
+             if (missingFields.length > 0) {
+                 alert("Please fill the following Mandatory Fields:\n\n- " + missingFields.join("\n- "));
+                 return;
+             }
+        }
+        
+        if(!confirm(`Confirm Save?`))return;
+        document.getElementById('loadingOverlay').style.display='flex';document.getElementById('loadingOverlay').classList.remove('hidden');
+        
+        try {
+            // --- STRICT SAVE VS UPDATE LOGIC ---
+            // 1. APPROVAL MODE: Always New (Draft)
+            if (isApprovalMode) {
+                const newRef = `AP-${new Date().getFullYear()}${Math.floor(1000+Math.random()*9000)}`;
+                document.getElementById('tariffNo').value = newRef;
+                editingRecordRef = null; // Force creation
+            }
+            // 2. MAIN FORM: UPDATE Mode
+            else if (mode === 'update') {
+                // Ensure we have a valid Ref ID to update
+                if (!editingRecordRef) {
+                      alert("Error: No record loaded to update. Switching to New Save.");
+                      mode = 'new'; // Fallback
+                } else {
+                    // Keep editingRecordRef to trigger "edit" action
+                }
+            }
+            // 3. MAIN FORM: NEW Mode
+            if (mode === 'new' && !isApprovalMode) {
+                 const newRef = `TS-${new Date().getFullYear()}${Math.floor(1000+Math.random()*9000)}`;
+                 document.getElementById('tariffNo').value = newRef;
+                 editingRecordRef = null; // Force creation
+            }
+
+            const d=captureFullData(),fd=new FormData();
+            
+            // ACTION DETERMINATION
+            if(editingRecordRef){
+                fd.append("action","edit");
+                fd.append("originalRef",editingRecordRef);
+            } else {
+                fd.append("action","save");
+            }
+            
+            fd.append("ref",d.basic.ref);
+            fd.append("name",d.basic.cust);
+            fd.append("date",d.basic.date);
+            fd.append("jsonData",JSON.stringify(d));
+            fd.append("docLink",d.docLink);
+            
+            await fetch(CONFIG.SCRIPT_URL,{method:'POST',body:fd,mode:'no-cors'});
+            
+            let p=0;const i=setInterval(()=>{p+=20;document.getElementById('progressBar').style.width=p+'%';document.getElementById('progressText').innerText=p+'%';if(p>=100){clearInterval(i);document.getElementById('progressSection').classList.add('hidden');document.getElementById('successSection').classList.remove('hidden');disableAllInputs(true);
+            // If we created a new record, update the Ref so subsequent saves become edits
+            if(!editingRecordRef) editingRecordRef = d.basic.ref;
+            fetchSheetData();}},200);
+        }catch(e){alert("Error Saving Data. Check Console.");console.error(e);closeLoading();}
+    }
+
+    function closeLoading(){
+        document.getElementById('loadingOverlay').style.display='none';
+        document.getElementById('loadingOverlay').classList.add('hidden'); // Ensure hidden class is added back
+        document.getElementById('progressSection').classList.remove('hidden'); // Reset for next time
+        document.getElementById('successSection').classList.add('hidden'); // Hide success message
+        document.getElementById('progressBar').style.width='0%'; // Reset progress bar
+    }
+
+    // PRE-PARSING OPTIMIZATION: Parse JSON once on fetch
+    function fetchSheetData(){
+        document.getElementById('syncStatus').innerText="Syncing...";
+        window.handleGvizResponse=function(j){
+            if(!j||!j.table)return;
+            sheetRecords=j.table.rows.map(r=>{
+                const c=r.c;
+                if(!c||c.length<5)return null;
+                const jStr=c[4]?.v||"";
+                if(!jStr.startsWith('{')) return null;
+                try {
+                    const parsed = JSON.parse(jStr);
+                    return {
+                        timestamp:c[0]?.v,
+                        ref:c[1]?.v,
+                        name:c[2]?.v,
+                        date:c[3]?.f||c[3]?.v,
+                        jsonData:jStr,
+                        parsedData: parsed // Store pre-parsed data
+                    };
+                } catch(e) { return null; }
+            }).filter(r=>r!==null).sort((a,b)=>a.name.localeCompare(b.name));
+            
+            // Populate Dropdowns using PRE-PARSED data
+            const sel=document.getElementById('cloudHistory');
+            const tariffSel=document.getElementById('allTariffHistory');
+            const approvalSel=document.getElementById('approvalHistory');
+            const mainAppSel = document.getElementById('mainApprovalHistory');
+            
+            sel.innerHTML='<option>-- All Records --</option>';
+            tariffSel.innerHTML='<option>-- Tariffs --</option>';
+            approvalSel.innerHTML='<option>-- Old Approvals --</option>';
+            if(mainAppSel) mainAppSel.innerHTML='<option>-- Old Approvals --</option>';
+            
+            sheetRecords.forEach((r,i)=>{
+                let isApp = (r.parsedData.isApproval === true);
+                // 1. Filter out Approvals from Main
+                if(!isApp) {
+                    const o1=document.createElement('option');o1.value=i;o1.text=r.name;sel.appendChild(o1);
+                } else {
+                    // Add to Approval Dropdowns
+                    const o3=document.createElement('option');o3.value=i;o3.text=r.name;approvalSel.appendChild(o3);
+                    if(mainAppSel) mainAppSel.appendChild(o3.cloneNode(true));
+                }
+                // 2. All Tariffs (All)
+                const o2=document.createElement('option');o2.value=i;o2.text=r.name;tariffSel.appendChild(o2);
+            });
+            
+            document.getElementById('syncStatus').innerText=`Total Sheets (${sheetRecords.length})`;
+        };
+        const s=document.createElement('script');s.src=`https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=responseHandler:handleGvizResponse&tq=SELECT%20A,B,C,D,E`;document.body.appendChild(s);
+    }
+    
+    function loadRecordFromDropdown(){loadSelectedRecord(document.getElementById('cloudHistory').value)}
+    function loadApprovalRecord(){loadSelectedRecord(document.getElementById('approvalHistory').value)}
+    function loadTariffRecord(){loadSelectedRecord(document.getElementById('allTariffHistory').value)}
+    function loadMainApprovalRecord(){loadSelectedRecord(document.getElementById('mainApprovalHistory').value)} 
+    
+    function loadSelectedRecord(i){
+        if(i===""||isNaN(i))return;
+        // USE PRE-PARSED DATA
+        const r=sheetRecords[i];
+        const d=r.parsedData;
+        
+        const tempRef = d.basic.ref;
+        resetForm(true);
+        editingRecordRef = tempRef;
+        
+        const set=(id,v)=>{if(document.getElementById(id))document.getElementById(id).value=v;if(document.getElementById('ap_'+id))document.getElementById('ap_'+id).value=v;};
+        set('commodity',d.basic.comm);set('customerName',d.basic.cust);set('customerType',d.basic.type);set('volMonth',d.basic.vol);set('creditDays',d.basic.cred);set('salesPerson',d.basic.ver);set('billingTerms',d.basic.bill);set('stream',d.basic.stream);set('remTHC',d.remarks.thc);set('remSpecial',d.remarks.special);set('remAdd',d.remarks.add);
+        document.getElementById('tariffNo').value=d.basic.ref;document.getElementById('dateToday').value=d.basic.date;
+        document.getElementById('tablesContainer').innerHTML='';tableCounter=0;document.getElementById('ap_tablesContainer').innerHTML='';
+        d.tables.forEach(t=>{addNewTableBlock();const id=tableCounter;document.getElementById(`tt_${id}`).value=t.tt;document.getElementById(`sl_${id}`).value=t.sl;document.getElementById(`df_${id}`).value=t.df;document.getElementById(`dt_${id}`).value=t.dt;document.getElementById(`tbl_rem_${id}`).value=t.rem;if(t.docLink){document.getElementById(`docLink_${id}`).value=t.docLink;document.getElementById(`previewBtn_${id}`).classList.remove('hidden');}t.rows.forEach((row,x)=>{document.getElementById(`t_${id}_pub_${x}`).value=row.pub;document.getElementById(`t_${id}_railm_${x}`).value=row.railm;document.getElementById(`t_${id}_disc_${x}`).value=row.disc;document.getElementById(`t_${id}_slr_${x}`).value=row.slr;document.getElementById(`t_${id}_slb_${x}`).value=row.slb;document.getElementById(`t_${id}_slw_${x}`).value=row.slw;document.getElementById(`t_${id}_slf_${x}`).value=row.slf;document.getElementById(`t_${id}_sls_${x}`).value=row.sls;document.getElementById(`t_${id}_cha_${x}`).value=row.cha;document.getElementById(`t_${id}_fwd_${x}`).value=row.fwd;document.getElementById(`t_${id}_sub_${x}`).value=row.sub;calcTableRow(id,x)});updateTableValues(id,true)});
+        document.getElementById('tbodyTransport').innerHTML='';d.transport.forEach(t=>addTransportRow({t:t.transporter,d:t.destination,d20:t.d20,d40:t.d40,rem:t.remarks}));
+        document.getElementById('tbodyIncentive').innerHTML='';d.incentives.forEach(i=>addIncentiveRow({l:i.line,d20:i.d20,d40:i.d40,rem:i.remarks}));
+        customerList=d.customers||[];renderCustomerList();disableAllInputs(true);
+        if(isApprovalMode) syncMainToApproval();
+
+        const isAdmin = ADMIN_USERS.includes(document.getElementById('currentUserDisplay').innerText);
+        const isPending = d.isApproval === true;
+
+        if (!isApprovalMode) {
+            const stat = document.getElementById('mainStatus');
+            if(isPending) {
+                stat.innerText = "Cost Sheet Pending";
+                stat.className = "input-field h-8 flex items-center justify-center font-bold text-[10px] uppercase rounded border text-center status-pending-approval"; 
+            } else {
+                stat.innerText = "Approved & Valid";
+                stat.className = "input-field h-8 flex items-center justify-center font-bold text-[10px] uppercase rounded border text-center status-valid";
+            }
+
+            if(isAdmin) {
+                document.getElementById('saveBtn').classList.add('hidden');
+                document.getElementById('updateBtn').classList.add('hidden');
+                document.getElementById('unlockBtn').classList.remove('hidden');
+            }
+        } else {
+            if(isAdmin) {
+                document.getElementById('unlockAppBtn').classList.remove('hidden');
+            }
+        }
+    }
+    
+    function unlockForm(forApproval = false){
+        if(prompt("Password:")==="4209211"){
+            disableAllInputs(false);
+            if(forApproval) {
+                document.getElementById('saveAppBtn').classList.remove('hidden');
+                document.getElementById('unlockAppBtn').classList.add('hidden');
+            } else {
+                document.getElementById('unlockBtn').classList.add('hidden');
+                document.getElementById('saveBtn').classList.add('hidden'); 
+                
+                const updBtn = document.getElementById('updateBtn');
+                if(updBtn) updBtn.classList.remove('hidden'); 
+                
+                document.getElementById('addTableBtn').disabled=false;
+            }
+        } else {
+            alert("Incorrect Password!");
+        }
+    }
+
+    function resetForm(skip){
+        if(!skip&&!confirm("Clear Form?"))return;
+        editingRecordRef=null;disableAllInputs(false);customerList=[];renderCustomerList();
+        document.getElementById('tablesContainer').innerHTML='';document.getElementById('ap_tablesContainer').innerHTML='';tableCounter=0;addNewTableBlock();
+        document.getElementById('tbodyTransport').innerHTML='';addTransportRow();
+        document.getElementById('tbodyIncentive').innerHTML='';addIncentiveRow();
+        document.querySelectorAll('input[type="text"],textarea').forEach(i=>i.value='');
+        document.querySelectorAll('select').forEach(s=>{if(!['loginUser','cloudHistory','approvalHistory','allTariffHistory','mainApprovalHistory'].includes(s.id))s.value=""});
+        document.getElementById('tariffNo').value=`TS-${new Date().getFullYear()}${Math.floor(1000+Math.random()*9000)}`;document.getElementById('dateToday').valueAsDate=new Date();
+        const u=document.getElementById('loginUser').value;if(u){const s=document.getElementById('salesPerson'),as=document.getElementById('ap_salesPerson');if(s)s.value=u;if(as)as.value=u;}
+        
+        const stat = document.getElementById('mainStatus');
+        stat.innerText = "-";
+        stat.className = "input-field h-8 flex items-center justify-center font-bold text-[10px] uppercase rounded border text-center status-pending";
+        
+        if(ADMIN_USERS.includes(document.getElementById('currentUserDisplay').innerText)) {
+            document.getElementById('saveBtn').classList.remove('hidden');
+            document.getElementById('updateBtn').classList.add('hidden');
+            document.getElementById('unlockBtn').classList.add('hidden');
+            
+            document.getElementById('saveAppBtn').classList.remove('hidden');
+            document.getElementById('unlockAppBtn').classList.add('hidden');
+        }
+
+        if(isApprovalMode) syncMainToApproval();
+    }
+    
+    function downloadApprovalAsImage(){
+        const element = document.getElementById('approvalContainer');
+        const body = document.body;
+        body.classList.add('snapshot-mode');
+
+        const approvalForm = document.getElementById('approvalContainer');
+        approvalForm.querySelectorAll('input, select, textarea').forEach(el => {
+             if(el.tagName === 'SELECT') {
+                 const selText = el.options[el.selectedIndex]?.text || "";
+                 el.setAttribute('data-html2canvas-ignore', 'true');
+                 const span = document.createElement('span');
+                 span.innerText = selText;
+                 span.className = "print-replacement font-bold";
+                 el.parentNode.insertBefore(span, el);
+                 el.style.display = "none";
+             } else {
+                 el.setAttribute('value', el.value);
+                 const val = el.value;
+                 el.setAttribute('data-html2canvas-ignore', 'true');
+                 const span = document.createElement('span');
+                 span.innerText = val;
+                 span.className = "print-replacement font-bold text-black";
+                 el.parentNode.insertBefore(span, el);
+                 el.style.display = "none";
+             }
+        });
+
+        setTimeout(() => {
+            html2canvas(document.body, {
+                scale: 3, 
+                useCORS: true,
+                windowWidth: 1200, 
+                ignoreElements: (element) => {
+                    return element.id === 'topControls' || element.classList.contains('no-print') || element.classList.contains('sidebar');
+                }
+            }).then(canvas => {
+                body.classList.remove('snapshot-mode');
+                
+                // Restore Inputs
+                approvalForm.querySelectorAll('.print-replacement').forEach(el => el.remove());
+                approvalForm.querySelectorAll('input, select, textarea').forEach(el => {
+                    el.removeAttribute('data-html2canvas-ignore');
+                    el.style.display = "";
+                });
+                
+                const link = document.createElement('a');
+                link.download = 'Approval_Request.png';
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+
+            }).catch(err => {
+                body.classList.remove('snapshot-mode');
+                approvalForm.querySelectorAll('.print-replacement').forEach(el => el.remove());
+                approvalForm.querySelectorAll('input, select, textarea').forEach(el => el.style.display = "");
+                console.error(err);
+                alert("Failed to generate image: " + err);
+            });
+        }, 100);
+    }
+
+    // --- NEW: HTML Download (Preserves Box Formatting Visually) ---
+    function downloadApprovalAsHTML() {
+        try {
+            const container = document.getElementById('approvalContainer');
+            if(!container) { alert("Approval container not found"); return; }
+            
+            const clone = container.cloneNode(true);
+            
+            // 1. Process Inputs BEFORE removing anything to maintain index parity
+            const origInputs = container.querySelectorAll('input, select, textarea');
+            const cloneInputs = clone.querySelectorAll('input, select, textarea');
+            
+            // Safety check
+            if(origInputs.length !== cloneInputs.length) {
+                console.warn("Input count mismatch during clone. Attempting fallback.");
+            }
+
+            for (let i = 0; i < cloneInputs.length; i++) {
+                const copy = cloneInputs[i];
+                // Try to match by ID first, then index
+                let orig = null;
+                if (copy.id) {
+                    orig = document.getElementById(copy.id); 
+                    // Note: In dynamic rows, IDs are unique, so this works. 
+                    // For inputs without IDs (transport row), we fall back to index matching if lengths match
+                    if (!orig && i < origInputs.length) orig = origInputs[i];
+                } else if (i < origInputs.length) {
+                    orig = origInputs[i];
+                }
+
+                if (!orig) continue;
+
+                const span = document.createElement('div');
+                // Copy classes to maintain layout/width
+                span.className = copy.className; 
+                // Copy ID to allow specific removals later
+                span.id = copy.id;
+                
+                // Styling to mimic the input box
+                Object.assign(span.style, {
+                    display: 'flex',
+                    alignItems: 'center',
+                    minHeight: '22px',
+                    whiteSpace: 'pre-wrap',
+                    overflow: 'hidden',
+                    padding: '2px 4px',
+                    border: '1px solid #ccc',
+                    backgroundColor: '#fff',
+                    color: 'black',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    width: '100%' // Ensure it fills cell
+                });
+                
+                // Specific fix for textarea height
+                if(orig.tagName === 'TEXTAREA') {
+                    span.style.minHeight = '60px';
+                    span.style.alignItems = 'flex-start'; // Align text top
+                }
+
+                let val = orig.value;
+                if(orig.tagName === 'SELECT') {
+                     val = orig.options[orig.selectedIndex]?.text || val;
+                }
+                span.innerText = val;
+                
+                if(copy.parentNode) copy.parentNode.replaceChild(span, copy);
+            }
+
+            // 2. Clean up unwanted elements
+            // Remove buttons, hidden elements, and the specific history dropdowns
+            const toRemove = clone.querySelectorAll('button, .hidden, .upload-section-mini, #allTariffHistory, #approvalHistory, #mainApprovalHistory');
+            toRemove.forEach(e => e.remove());
+
+            // 3. Generate File
+            const htmlContent = `<!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Approval Request - ${document.getElementById('tariffNo').value}</title>
+                <script src="https://cdn.tailwindcss.com"><\/script>
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                <style>
+                    body { background: white; padding: 20px; font-family: 'Segoe UI', sans-serif; max-width: 1400px; margin: 0 auto; color: black; }
+                    .app-label { font-weight: 700; font-size: 11px; text-transform: uppercase; color: #000; margin-bottom: 2px; display: block; }
+                    table { border-collapse: collapse; width: 100%; margin-bottom: 15px; }
+                    td, th { border: 1px solid #666; padding: 4px; font-size: 11px; vertical-align: middle; }
+                    .tariff-table th { background: #e5e7eb; color: black; font-weight: bold; text-align: center; }
+                    .tariff-table td { text-align: center; }
+                    h2 { font-size: 20px; font-weight: 800; color: #1e3a8a; margin-bottom: 15px; border-bottom: 3px solid #1e3a8a; padding-bottom: 5px; }
+                    h4 { font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #000; }
+                    /* Utility to hide things marked no-print in class list if any remain */
+                    .no-print { display: none !important; }
+                    /* Ensure grid layouts work */
+                    .grid { display: grid; }
+                    .grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+                    .gap-4 { gap: 1rem; }
+                    .mb-4 { margin-bottom: 1rem; }
+                    .p-2 { padding: 0.5rem; }
+                    .bg-\\[\\#1e293b\\] { background-color: #1e293b; color: white; } /* Header boxes in tariff */
+                    /* Force black text on white bg for generated file inputs */
+                    .app-input, input, select, textarea { color: black !important; }
+                </style>
+            </head>
+            <body>
+                ${clone.innerHTML}
+            </body>
+            </html>`;
+
+            const blob = new Blob([htmlContent], {type: 'text/html'});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Approval_Request_${document.getElementById('tariffNo').value}.html`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+        } catch(e) {
+            console.error("HTML Gen Error:", e);
+            alert("Error generating HTML: " + e.message);
+        }
+    }
+
+    // --- NEW: Excel Download (Structured Data) ---
+    function downloadApprovalAsExcel() {
+        const wb = XLSX.utils.book_new();
+        const data = [];
+        
+        // Helper to get value
+        const val = (id) => {
+            const el = document.getElementById(id);
+            if(!el) return "";
+            if(el.tagName === 'SELECT') return el.options[el.selectedIndex]?.text || "";
+            return el.value;
+        };
+
+        // Header
+        data.push(["NEW APPROVAL REQUEST"]);
+        data.push([]); // spacer
+
+        // EMAIL BODY
+        data.push(["EMAIL BODY / COVER NOTE"]);
+        data.push([val('approvalEmailBody')]);
+        data.push([]);
+
+        // Form Grid
+        data.push(["Commodity", val('ap_commodity'), "Customer Name", val('ap_customerName')]);
+        data.push(["Customer Type", val('ap_customerType'), "Vol / Month", val('ap_volMonth')]);
+        data.push(["Credit Days", val('ap_creditDays'), "Sales Person", val('ap_salesPerson')]);
+        data.push(["Billing Terms", val('ap_billingTerms'), "Stream", val('ap_stream')]);
+        data.push([]);
+
+        // Transport
+        data.push(["TRANSPORT TARIFF DETAILS"]);
+        data.push(["Transporter", "Origin", "Destination", "Disc 20\"", "Disc 40\"", "Remarks"]);
+        document.querySelectorAll('#tbodyTransport_ap tr').forEach(tr => {
+            const inputs = tr.querySelectorAll('input');
+            const select = tr.querySelector('select');
+            const txt = tr.querySelector('textarea');
+            let dest = select ? select.value : inputs[1].value;
+            let d20 = select ? inputs[1].value : inputs[2].value;
+            let d40 = select ? inputs[2].value : inputs[3].value;
+            data.push([inputs[0].value, "Kilaraipur", dest, d20, d40, txt.value]);
+        });
+        data.push([]);
+
+        // Incentive
+        data.push(["INCENTIVE DETAILS"]);
+        data.push(["Line", "Disc 20\"", "Disc 40\"", "Remarks"]);
+        document.querySelectorAll('#tbodyIncentive_ap tr').forEach(tr => {
+            const inputs = tr.querySelectorAll('input');
+            const txt = tr.querySelector('textarea');
+            data.push([inputs[0].value, inputs[1].value, inputs[2].value, txt.value]);
+        });
+        data.push([]);
+
+        // Remarks
+        data.push(["REMARKS"]);
+        data.push(["THC Subsidy", val('ap_remTHC')]);
+        data.push(["Special Arr.", val('ap_remSpecial')]);
+        data.push(["Additional", val('ap_remAdd')]);
+        data.push([]);
+
+        // Dynamic Tables
+        const tables = document.getElementById('ap_tablesContainer').querySelectorAll('.table-block');
+        tables.forEach(tbl => {
+            const id = tbl.id.split('_')[1];
+            const type = document.getElementById(`tt_${id}`).value;
+            const line = document.getElementById(`sl_${id}`).value;
+            const valid = document.getElementById(`status_${id}`).innerText;
+            
+            data.push([`TARIFF TABLE: ${line} - ${type} (${valid})`]);
+            data.push(["Slab", "Public", "Rail Mgn", "Disc", "Line R", "Line B", "Line W", "Line F", "Line S", "CHA", "Fwd", "Sub", "Res W", "Res F", "Res S", "Billing"]);
+            
+            // Reconstruct rows based on slabs logic
+            slabs.forEach((s, i) => {
+                 const g = (k) => document.getElementById(`t_${id}_${k}_${i}`)?.value || "";
+                 const r = (k) => document.getElementById(`t_${id}_${k}_${i}`)?.innerText || "";
+                 data.push([
+                     s.label, g('pub'), g('railm'), g('disc'), g('slr'), g('slb'), g('slw'), g('slf'), g('sls'), g('cha'), g('fwd'), g('sub'),
+                     r('res_w'), r('res_f'), r('res_s'), r('res_t')
+                 ]);
+            });
+            data.push([]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        
+        // Basic column widths
+        ws['!cols'] = [{wch:20}, {wch:15}, {wch:20}, {wch:15}, {wch:10}, {wch:10}];
+
+        XLSX.utils.book_append_sheet(wb, ws, "Approval Request");
+        XLSX.writeFile(wb, `Approval_Request_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
+    
+    // MOVED TO END: Ensure everything is defined
+    document.addEventListener('DOMContentLoaded',()=>{resetForm(true)});
 </script>
 </body>
 </html>
