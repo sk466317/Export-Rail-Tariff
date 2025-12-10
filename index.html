@@ -511,7 +511,10 @@
 
     function addNewTableBlock(){
         tableCounter++;const id=tableCounter,div=document.createElement('div');div.className="table-block mb-16 border border-gray-600 bg-white pb-4 rounded p-2 shadow-sm";div.id=`tableBlock_${id}`;
-        let rows='';slabs.forEach((s,i)=>{rows+=`<tr class="${s.label.includes('40" Upto')||s.label.includes('40" Over')?'highlight-row':''}"><td class="bg-yellow-100"><input type="text" id="t_${id}_lbl_${i}" class="font-bold text-blue-900 w-full" readonly></td><td class="font-bold bg-transparent whitespace-nowrap">${s.label}</td><td><input type="number" id="t_${id}_pub_${i}" value="${s.p}" readonly tabindex="-1"></td><td><input type="number" id="t_${id}_railm_${i}" value="${s.m}" readonly tabindex="-1"></td><td><input type="number" id="t_${id}_disc_${i}" oninput="calcTableRow(${id},${i})" class="bg-yellow-col"></td><td><input type="number" id="t_${id}_slr_${i}" readonly tabindex="-1"></td><td><input type="number" id="t_${id}_slb_${i}" readonly tabindex="-1"></td><td><input type="number" id="t_${id}_slw_${i}" oninput="calcTableRow(${id},${i})" class="bg-blue-50 font-bold text-blue-800"></td><td><input type="number" id="t_${id}_slf_${i}" oninput="calcTableRow(${id},${i})" class="bg-blue-50 font-bold text-blue-800"></td><td><input type="number" id="t_${id}_sls_${i}" oninput="calcTableRow(${id},${i})" class="bg-blue-50 font-bold text-blue-800"></td><td><input type="number" id="t_${id}_cha_${i}" oninput="calcTableRow(${id},${i})" class="bg-teal-col"></td><td><input type="number" id="t_${id}_fwd_${i}" oninput="calcTableRow(${id},${i})" class="bg-teal-col"></td><td><input type="number" id="t_${id}_sub_${i}" oninput="calcTableRow(${id},${i})" class="bg-yellow-col font-bold"></td><td class="bg-gray-col"><span id="t_${id}_res_w_${i}"></span></td><td class="bg-gray-col"><span id="t_${id}_res_f_${i}"></span></td><td class="bg-gray-col"><span id="t_${id}_res_s_${i}"></span></td><td class="bg-red-col"><span id="t_${id}_res_t_${i}"></span></td></tr>`});
+        let rows='';slabs.forEach((s,i)=>{// Is puri line ko replace karein:
+rows+=`<tr class="${s.label.includes('40" Upto')||s.label.includes('40" Over')?'highlight-row':''}"><td class="bg-yellow-100"><input type="text" id="t_${id}_lbl_${i}" class="font-bold text-blue-900 w-full" readonly></td><td class="font-bold bg-transparent whitespace-nowrap">${s.label}</td><td><input type="number" id="t_${id}_pub_${i}" value="${s.p}" readonly tabindex="-1"></td><td><input type="number" id="t_${id}_railm_${i}" value="${s.m}" readonly tabindex="-1"></td><td><input type="number" id="t_${id}_disc_${i}" oninput="calcTableRow(${id},${i})" class="bg-yellow-col"></td>
+<td><input type="number" id="t_${id}_slr_${i}" oninput="calcTableRow(${id},${i})" class="bg-blue-50 font-bold text-blue-800"></td>
+<td><input type="number" id="t_${id}_slb_${i}" readonly tabindex="-1"></td><td><input type="number" id="t_${id}_slw_${i}" oninput="calcTableRow(${id},${i})" class="bg-blue-50 font-bold text-blue-800"></td><td><input type="number" id="t_${id}_slf_${i}" oninput="calcTableRow(${id},${i})" class="bg-blue-50 font-bold text-blue-800"></td><td><input type="number" id="t_${id}_sls_${i}" oninput="calcTableRow(${id},${i})" class="bg-blue-50 font-bold text-blue-800"></td><td><input type="number" id="t_${id}_cha_${i}" oninput="calcTableRow(${id},${i})" class="bg-teal-col"></td><td><input type="number" id="t_${id}_fwd_${i}" oninput="calcTableRow(${id},${i})" class="bg-teal-col"></td><td><input type="number" id="t_${id}_sub_${i}" oninput="calcTableRow(${id},${i})" class="bg-yellow-col font-bold"></td><td class="bg-gray-col"><span id="t_${id}_res_w_${i}"></span></td><td class="bg-gray-col"><span id="t_${id}_res_f_${i}"></span></td><td class="bg-gray-col"><span id="t_${id}_res_s_${i}"></span></td><td class="bg-red-col"><span id="t_${id}_res_t_${i}"></span></td></tr>`});
         
         div.innerHTML=`
             <div id="headerBox_${id}" class="grid grid-cols-5 gap-4 mb-2 bg-[#1e293b] p-2 rounded border border-gray-800 items-end relative">
@@ -735,25 +738,18 @@
         
         try {
             // --- STRICT SAVE VS UPDATE LOGIC ---
-            // 1. APPROVAL MODE: Always New (Draft) unless editing
             if (isApprovalMode) {
-                // If editingRecordRef is null, it's new. If set, it's an update.
-                // NOTE: 'isApproval' flag is set to TRUE in captureFullData
                 if (!editingRecordRef) {
                     const newRef = `AP-${new Date().getFullYear()}${Math.floor(1000+Math.random()*9000)}`;
                     document.getElementById('tariffNo').value = newRef;
                 }
-                // If editingRecordRef exists (loaded from old list or tariff list), it keeps that ref.
             }
-            // 2. MAIN FORM: UPDATE Mode
             else if (mode === 'update') {
-                // Main Form save -> isApproval will be FALSE
                 if (!editingRecordRef) {
                       alert("Error: No record loaded to update. Switching to New Save.");
                       mode = 'new'; 
                 } 
             }
-            // 3. MAIN FORM: NEW Mode
             if (mode === 'new' && !isApprovalMode) {
                  const newRef = `TS-${new Date().getFullYear()}${Math.floor(1000+Math.random()*9000)}`;
                  document.getElementById('tariffNo').value = newRef;
@@ -762,7 +758,6 @@
 
             const d=captureFullData(),fd=new FormData();
             
-            // STRICT TAGGING: Overwrite captureFullData's return just in case
             if(isApprovalMode) d.isApproval = true;
             else d.isApproval = false;
 
@@ -782,10 +777,57 @@
             
             await fetch(CONFIG.SCRIPT_URL,{method:'POST',body:fd,mode:'no-cors'});
             
-            let p=0;const i=setInterval(()=>{p+=20;document.getElementById('progressBar').style.width=p+'%';document.getElementById('progressText').innerText=p+'%';if(p>=100){clearInterval(i);document.getElementById('progressSection').classList.add('hidden');document.getElementById('successSection').classList.remove('hidden');disableAllInputs(true);
-            // If we created a new record, update the Ref so subsequent saves become edits
-            if(!editingRecordRef) editingRecordRef = d.basic.ref;
-            fetchSheetData();}},200);
+            let p=0;const i=setInterval(()=>{p+=20;document.getElementById('progressBar').style.width=p+'%';document.getElementById('progressText').innerText=p+'%';if(p>=100){clearInterval(i);
+                
+                document.getElementById('progressSection').classList.add('hidden');
+                document.getElementById('successSection').classList.remove('hidden');
+                disableAllInputs(true);
+                
+                // --- FIX: LOCAL UPDATE TO PREVENT STALE DATA ---
+                // Google Cache purana data bhejta hai, isliye hum locally update karenge
+                
+                const savedRef = d.basic.ref;
+                if(!editingRecordRef) editingRecordRef = savedRef;
+
+                // 1. Local List me record dhundho
+                let foundIndex = sheetRecords.findIndex(r => r.parsedData.basic.ref === savedRef);
+                
+                const newRecordObj = {
+                    timestamp: new Date().toISOString(),
+                    ref: savedRef,
+                    name: d.basic.cust,
+                    date: d.basic.date,
+                    jsonData: JSON.stringify(d),
+                    parsedData: d
+                };
+
+                if(foundIndex > -1) {
+                    // Update existing record locally
+                    sheetRecords[foundIndex] = newRecordObj;
+                } else {
+                    // Add new record locally
+                    sheetRecords.push(newRecordObj);
+                }
+                
+                // 2. Dropdowns refresh karo
+                sheetRecords.sort((a,b)=>a.name.localeCompare(b.name));
+                repopulateDropdowns();
+
+                // 3. User ko usi record par rakho
+                const newIndex = sheetRecords.findIndex(r => r.parsedData.basic.ref === savedRef);
+                if(newIndex > -1) {
+                    if(isApprovalMode) {
+                        document.getElementById('approvalHistory').value = newIndex;
+                    } else {
+                        document.getElementById('cloudHistory').value = newIndex;
+                    }
+                }
+
+                // DHYAAN DE: Humne fetchSheetData() ko yaha se hata diya hai taaki
+                // wo turant purana data la kar humare naye data ko overwrite na kare.
+                // Aap baad me manually refresh button daba sakte hain.
+                
+            }},200);
         }catch(e){alert("Error Saving Data. Check Console.");console.error(e);closeLoading();}
     }
 
@@ -882,7 +924,7 @@ function filterDropdown() {
         const tempRef = d.basic.ref;
         resetForm(true);
         
-        // LOGIC UPDATE: Always keep the Ref ID for tracking
+        // Ref ID Set karein
         editingRecordRef = tempRef;
         document.getElementById('tariffNo').value = tempRef;
         
@@ -893,14 +935,54 @@ function filterDropdown() {
 
         document.getElementById('dateToday').value=d.basic.date;
         document.getElementById('tablesContainer').innerHTML='';tableCounter=0;document.getElementById('ap_tablesContainer').innerHTML='';
-        d.tables.forEach(t=>{addNewTableBlock();const id=tableCounter;document.getElementById(`tt_${id}`).value=t.tt;document.getElementById(`sl_${id}`).value=t.sl;document.getElementById(`df_${id}`).value=t.df;document.getElementById(`dt_${id}`).value=t.dt;document.getElementById(`tbl_rem_${id}`).value=t.rem;if(t.docLink){document.getElementById(`docLink_${id}`).value=t.docLink;document.getElementById(`previewBtn_${id}`).classList.remove('hidden');}t.rows.forEach((row,x)=>{document.getElementById(`t_${id}_pub_${x}`).value=row.pub;document.getElementById(`t_${id}_railm_${x}`).value=row.railm;document.getElementById(`t_${id}_disc_${x}`).value=row.disc;document.getElementById(`t_${id}_slr_${x}`).value=row.slr;document.getElementById(`t_${id}_slb_${x}`).value=row.slb;document.getElementById(`t_${id}_slw_${x}`).value=row.slw;document.getElementById(`t_${id}_slf_${x}`).value=row.slf;document.getElementById(`t_${id}_sls_${x}`).value=row.sls;document.getElementById(`t_${id}_cha_${x}`).value=row.cha;document.getElementById(`t_${id}_fwd_${x}`).value=row.fwd;document.getElementById(`t_${id}_sub_${x}`).value=row.sub;calcTableRow(id,x)});updateTableValues(id,true)});
+        
+        // --- TABLES LOAD LOGIC ---
+        d.tables.forEach(t=>{
+            addNewTableBlock();
+            const id=tableCounter;
+            document.getElementById(`tt_${id}`).value=t.tt;
+            document.getElementById(`sl_${id}`).value=t.sl;
+            document.getElementById(`df_${id}`).value=t.df;
+            document.getElementById(`dt_${id}`).value=t.dt;
+            document.getElementById(`tbl_rem_${id}`).value=t.rem;
+            
+            if(t.docLink){
+                document.getElementById(`docLink_${id}`).value=t.docLink;
+                document.getElementById(`previewBtn_${id}`).classList.remove('hidden');
+            }
+            
+            t.rows.forEach((row,x)=>{
+                document.getElementById(`t_${id}_pub_${x}`).value=row.pub;
+                document.getElementById(`t_${id}_railm_${x}`).value=row.railm;
+                document.getElementById(`t_${id}_disc_${x}`).value=row.disc;
+                
+                // IMPORTANT: Saved SLR value ko load karo
+                document.getElementById(`t_${id}_slr_${x}`).value=row.slr;
+                
+                document.getElementById(`t_${id}_slb_${x}`).value=row.slb;
+                document.getElementById(`t_${id}_slw_${x}`).value=row.slw;
+                document.getElementById(`t_${id}_slf_${x}`).value=row.slf;
+                document.getElementById(`t_${id}_sls_${x}`).value=row.sls;
+                document.getElementById(`t_${id}_cha_${x}`).value=row.cha;
+                document.getElementById(`t_${id}_fwd_${x}`).value=row.fwd;
+                document.getElementById(`t_${id}_sub_${x}`).value=row.sub;
+                
+                calcTableRow(id,x);
+            });
+            
+            // Logic Update: updateTableValues ko 'true' (preserve) ke sath call karein 
+            // taaki ye abhi load kiye gaye SLR data ko overwrite na kare
+            updateTableValues(id,true);
+        });
+        
         document.getElementById('tbodyTransport').innerHTML='';d.transport.forEach(t=>addTransportRow({t:t.transporter,d:t.destination,d20:t.d20,d40:t.d40,rem:t.remarks}));
         document.getElementById('tbodyIncentive').innerHTML='';d.incentives.forEach(i=>addIncentiveRow({l:i.line,d20:i.d20,d40:i.d40,rem:i.remarks}));
         customerList=d.customers||[];renderCustomerList();disableAllInputs(true);
         if(isApprovalMode) syncMainToApproval();
 
-        const isAdmin = ADMIN_USERS.includes(document.getElementById('currentUserDisplay').innerText);
+        // Status Logic
         const isPending = d.isApproval === true;
+        const isAdmin = ADMIN_USERS.includes(document.getElementById('currentUserDisplay').innerText);
 
         if (!isApprovalMode) {
             const stat = document.getElementById('mainStatus');
@@ -918,7 +1000,6 @@ function filterDropdown() {
                 document.getElementById('unlockBtn').classList.remove('hidden');
             }
         } else {
-            // Approval Mode - Show unlock for everyone
             document.getElementById('unlockAppBtn').classList.remove('hidden');
         }
     }
