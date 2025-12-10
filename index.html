@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Export Rail Tariff Generator - Optimized</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
@@ -161,7 +160,7 @@
                             
                             <!-- NEW: Filtered Approval Dropdown in Main Form -->
                             <select id="mainApprovalHistory" class="border border-yellow-600 rounded px-2 py-1 text-xs w-32 md:w-48 text-blue-900 font-bold bg-yellow-50">
-                                <option>-- Old Approvals --</option>
+                                <option>-- Pending Approvals --</option>
                             </select>
                             <button onclick="loadMainApprovalRecord()" class="bg-yellow-600 text-white px-2 py-1 rounded text-xs font-bold shadow hover:bg-yellow-700">SHOW</button>
 
@@ -174,7 +173,7 @@
                             <button onclick="openReportModal()" class="bg-indigo-600 text-white px-3 py-1 rounded font-bold text-xs hover:bg-indigo-700 shadow">Reports</button>
                             <button onclick="sendEmail()" class="admin-only bg-blue-500 text-white px-3 py-1 rounded font-bold text-xs hover:bg-blue-600 shadow">Email</button>
                             <button onclick="copyToClipboard()" class="admin-only bg-teal-600 text-white px-3 py-1 rounded font-bold text-xs hover:bg-teal-700 shadow">Img</button>
-                            <button onclick="downloadPDF()" class="admin-only bg-red-600 text-white px-3 py-1 rounded font-bold text-xs hover:bg-red-700 shadow">PDF</button>
+			    <button onclick="downloadMainAsHTML()" class="admin-only bg-orange-500 text-white px-3 py-1 rounded font-bold text-xs hover:bg-orange-600 shadow">Download Tariff</button>
                             
                             <button id="saveBtn" onclick="saveDataToSheet('new')" class="admin-only bg-green-600 text-white px-4 py-1 rounded font-bold text-xs animate-pulse hover:bg-green-700 shadow">SAVE NEW</button>
                             
@@ -276,7 +275,7 @@
 
                     <!-- EXISTING: Approval History (Now Filtered) -->
                     <select id="approvalHistory" class="border border-gray-400 rounded px-2 py-1 text-xs w-48 text-blue-900 font-bold bg-blue-50" onchange="loadApprovalRecord()">
-                        <option>-- Old Approvals --</option>
+                        <option>-- Pending Approvals --</option>
                     </select>
                     
                     <button id="saveAppBtn" onclick="saveDataToSheet()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded shadow text-xs font-bold animate-pulse">SAVE APPROVAL</button>
@@ -829,6 +828,11 @@
         const s=document.createElement('script');s.src=`https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=responseHandler:handleGvizResponse&tq=SELECT%20A,B,C,D,E`;document.body.appendChild(s);
     }
 
+// Search box ke liye missing function
+function filterDropdown() {
+    var input = document.getElementById("searchBox");
+    repopulateDropdowns(input.value);
+}
     function repopulateDropdowns(searchTerm = "") {
         const sel=document.getElementById('cloudHistory');
         const tariffSel=document.getElementById('allTariffHistory');
@@ -839,26 +843,28 @@
 
         sel.innerHTML='<option>-- All Records --</option>';
         tariffSel.innerHTML='<option>-- Tariffs --</option>';
-        approvalSel.innerHTML='<option>-- Old Approvals --</option>';
-        if(mainAppSel) mainAppSel.innerHTML='<option>-- Old Approvals --</option>';
+        approvalSel.innerHTML='<option>-- Pending Approvals --</option>';
+        if(mainAppSel) mainAppSel.innerHTML='<option>-- Pending Approvals --</option>';
         
         sheetRecords.forEach((r,i)=>{
             if(term && !r.name.toLowerCase().includes(term)) return;
 
-            // Updated check to handle string "true" if any legacy data exists
+            // Check logic
             let isApp = (r.parsedData.isApproval === true || r.parsedData.isApproval === "true");
             
-            // 1. Filter out Approvals from Main (Show only if isApproval is NOT true)
-            // Logic Change: If isApproval is explicitly FALSE or undefined, show in main list.
+            // LOGIC CHANGE HERE:
             if(!isApp) {
+                // 1. Agar Approval nahi hai (Normal Record), to Main List me add karo
                 const o1=document.createElement('option');o1.value=i;o1.text=r.name;sel.appendChild(o1);
+
+                // 2. AUR isko hi Approval Form ke "Tariffs" dropdown me bhi add karo
+                // (Pehle ye line loop ke last me thi, ab yaha andar hai)
+                const o2=document.createElement('option');o2.value=i;o2.text=r.name;tariffSel.appendChild(o2);
             } else {
-                // If isApproval is TRUE, show in Approval Dropdowns
+                // Agar Approval hai, to Approval List me add karo
                 const o3=document.createElement('option');o3.value=i;o3.text=r.name;approvalSel.appendChild(o3);
                 if(mainAppSel) mainAppSel.appendChild(o3.cloneNode(true));
             }
-            // 2. All Tariffs (All)
-            const o2=document.createElement('option');o2.value=i;o2.text=r.name;tariffSel.appendChild(o2);
         });
     }
     
@@ -1268,6 +1274,122 @@
     
     // MOVED TO END: Ensure everything is defined
     document.addEventListener('DOMContentLoaded',()=>{resetForm(true)});
+// --- NEW: Main Form HTML Download ---
+    function downloadMainAsHTML() {
+        try {
+            const container = document.getElementById('printArea');
+            if(!container) { alert("Print Area not found"); return; }
+            
+            const clone = container.cloneNode(true);
+            
+            // 1. Process Inputs (Convert to Text for display)
+            const origInputs = container.querySelectorAll('input, select, textarea');
+            const cloneInputs = clone.querySelectorAll('input, select, textarea');
+            
+            for (let i = 0; i < cloneInputs.length; i++) {
+                const copy = cloneInputs[i];
+                let orig = null;
+                
+                if (copy.id) {
+                    orig = document.getElementById(copy.id); 
+                } else if (i < origInputs.length) {
+                    orig = origInputs[i];
+                }
+
+                if (!orig) continue;
+
+                const span = document.createElement('div');
+                span.className = copy.className; 
+                span.id = copy.id; // Keep ID
+                
+                // Copy styles
+                Object.assign(span.style, {
+                    display: 'flex',
+                    alignItems: 'center',
+                    minHeight: '22px',
+                    whiteSpace: 'pre-wrap',
+                    overflow: 'hidden',
+                    padding: '2px 4px',
+                    border: '1px solid #ccc',
+                    // Background color maintain karne ki koshish (e.g. yellow cells)
+                    backgroundColor: window.getComputedStyle(orig).backgroundColor, 
+                    color: 'black',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    width: '100%' 
+                });
+                
+                if(orig.tagName === 'TEXTAREA') {
+                    span.style.minHeight = '50px';
+                    span.style.alignItems = 'flex-start';
+                }
+
+                let val = orig.value;
+                if(orig.tagName === 'SELECT') {
+                     val = orig.options[orig.selectedIndex]?.text || val;
+                }
+                span.innerText = val;
+                
+                if(copy.parentNode) copy.parentNode.replaceChild(span, copy);
+            }
+
+            // 2. Remove unwanted elements (Buttons, Hidden inputs, etc.)
+            const toRemove = clone.querySelectorAll('button, .no-print, .upload-section-mini, .hidden');
+            toRemove.forEach(e => e.remove());
+
+            // 3. Generate HTML File
+            const htmlContent = `<!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Tariff Sheet - ${document.getElementById('tariffNo').value}</title>
+                <script src="https://cdn.tailwindcss.com"><\/script>
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                <style>
+                    body { background: white; padding: 20px; font-family: 'Segoe UI', sans-serif; max-width: 1400px; margin: 0 auto; color: black; }
+                    /* Table styling to look like Main Form */
+                    .tariff-table { width: 100%; border-collapse: collapse; font-size: 10px; table-layout: fixed; }
+                    .tariff-table th { border: 1px solid #9ca3af; padding: 6px 2px; background-color: #e5e7eb; color: #000; font-weight: 700; text-align: center; }
+                    .tariff-table td { border: 1px solid #9ca3af; padding: 4px 2px; text-align: center; color: #000; }
+                    
+                    /* Utility classes mapping */
+                    .highlight-row { background-color: #f3f4f6; }
+                    .bg-yellow-col { background-color: #fff; } 
+                    .bg-gray-col { background-color: #f9fafb; font-weight: 700; }
+                    .bg-red-col { background-color: #fee2e2; font-weight: 900; }
+                    .text-white { color: white !important; }
+                    
+                    /* Header boxes styling */
+                    .grid { display: grid; }
+                    .grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+                    .gap-4 { gap: 1rem; }
+                    .mb-4 { margin-bottom: 1rem; }
+                    .p-2 { padding: 0.5rem; }
+                    
+                    input, select, textarea { color: black !important; font-weight: bold; }
+                    h2 { color: #1e3a8a; font-weight: 800; font-size: 1.25rem; }
+                </style>
+            </head>
+            <body>
+                <div style="border: 1px solid #ccc; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                    ${clone.innerHTML}
+                </div>
+            </body>
+            </html>`;
+
+            const blob = new Blob([htmlContent], {type: 'text/html'});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Tariff_${document.getElementById('tariffNo').value}.html`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+        } catch(e) {
+            console.error("HTML Gen Error:", e);
+            alert("Error generating HTML: " + e.message);
+        }
+    }
 </script>
 </body>
 </html>
