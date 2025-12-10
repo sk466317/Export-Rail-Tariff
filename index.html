@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Export Rail Tariff Generator - Optimized</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
@@ -30,6 +30,7 @@
             .content-area { width: 100% !important; overflow: visible; padding: 0; }
             .page-container { box-shadow: none !important; border: none !important; width: 100% !important; margin: 0 !important; max-width: 100%; }
             .table-block { break-inside: avoid; page-break-inside: avoid; }
+            .content-collapsible { display: block !important; } /* Force show content on print */
             
             input, select, textarea { border: none !important; background: transparent !important; appearance: none; color: black !important; font-weight: bold !important; }
             .tariff-table th { 
@@ -49,14 +50,30 @@
         .pdf-mode table,.pdf-mode th,.pdf-mode td,.pdf-mode input,.pdf-mode select,.pdf-mode textarea{border:0.5px solid #000!important;background:0 0!important;color:#000!important;border-radius:0!important}
         .bg-form-base{background-color:#bfdbfe}
         .tariff-table{width:100%;border-collapse:collapse;font-size:.65rem;table-layout:fixed;font-family:'Inter',sans-serif}
-        .tariff-table th{border:1px solid #94a3b8;padding:6px 2px;text-align:center;font-weight:700;text-transform:uppercase;background-color:#f1f5f9;color:#0f172a;line-height:1.1;font-size:.55rem}
-        .tariff-table td{border:1px solid #94a3b8;padding:4px 2px;text-align:center;color:#334155}
-        .tariff-table input{width:100%;text-align:center;background:0 0;border:none;font-size:.7rem;font-weight:600;color:#1e293b}
-        .highlight-row{background-color:#fff7ed!important}
-        .highlight-row td{border-top:1px solid #fdba74;border-bottom:1px solid #fdba74;color:#c2410c}
-        .bg-yellow-col{background-color:#fef08a!important}.bg-teal-col{background-color:#ccfbf1!important}.bg-gray-col{background-color:#f1f5f9;color:#374151;font-weight:700}.bg-red-col{background-color:#fee2e2;color:#dc2626;font-weight:900}
+        .tariff-table th{border:1px solid #9ca3af;padding:6px 2px;text-align:center;font-weight:700;text-transform:uppercase;background-color:#e5e7eb;color:#000;line-height:1.1;font-size:.55rem}
+        .tariff-table td{border:1px solid #9ca3af;padding:4px 2px;text-align:center;color:#000}
+        .tariff-table input{width:100%;text-align:center;background:0 0;border:none;font-size:.7rem;font-weight:600;color:#000}
+        
+        /* SIMPLIFIED COLORS REQUEST */
+        .highlight-row{background-color:#f3f4f6!important}
+        .highlight-row td{border-top:1px solid #d1d5db;border-bottom:1px solid #d1d5db;color:#000}
+        
+        .bg-yellow-col{background-color:#fff!important} 
+        .bg-teal-col{background-color:#fff!important}
+        .bg-gray-col{background-color:#f9fafb;color:#000;font-weight:700}
+        .bg-red-col{background-color:#fee2e2;color:#000;font-weight:900}
+
         .input-field{border:1px solid #4b5563;border-radius:4px;padding:4px 8px;width:100%;font-size:.75rem;background-color:#f3f4f6;color:#111827;font-weight:700}
-        input:disabled,select:disabled,textarea:disabled{background-color:#fff7ed!important;color:#78350f!important;font-weight:900!important;border:1px solid #fdba74!important;opacity:1!important}
+        
+        /* SIMPLIFIED READ ONLY COLOR SCHEME */
+        input:disabled,select:disabled,textarea:disabled{
+            background-color: #e5e7eb !important; /* Simple Gray */
+            color: #000 !important;                /* Black Text */
+            font-weight: 700 !important;
+            border: 1px solid #9ca3af !important;
+            opacity: 1 !important;
+        }
+
         .status-valid{background-color:#bbf7d0;color:#14532d;border:2px solid #15803d}.status-expired{background-color:#fee2e2;color:#991b1b;border:2px solid #ef4444}.status-pending{background-color:#f3f4f6;color:#6b7280;border:2px solid #9ca3af}
         .status-pending-approval{background-color:#fee2e2;color:#dc2626;border:2px solid #ef4444;font-weight:bold;animation:pulse 2s infinite}
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
@@ -64,18 +81,37 @@
         .customer-item{cursor:pointer}
         .report-table th{position:sticky;top:0;background:#e2e8f0;color:#000;z-index:10;border:1px solid #000}
         .report-card{border:1px solid #000;border-radius:8px;margin-bottom:20px;background:#fff;box-shadow:0 4px 6px -1px rgba(0,0,0,.1)}
+        
         /* Approval View Specifics */
         #approvalContainer{display:none;flex-direction:column;background:#fff;padding:20px;border-radius:8px;}
         .app-table{width:100%;border-collapse:collapse;margin-bottom:20px}.app-table td{padding:8px;border:1px solid #ccc;vertical-align:middle}
         .app-label{font-weight:700;font-size:11px;text-transform:uppercase;color:#000!important}
         .app-input{width:100%;border:1px solid #999;padding:5px;font-size:12px;font-weight:700;background:#f9f9f9;color:#000!important}
-        /* Hiding specific elements in Approval Mode as requested */
         #approvalContainer .upload-section-mini,
         #approvalContainer .status-valid,
         #approvalContainer .status-expired { display: none !important; }
-        /* Tables in Approval */
         #approvalContainer .tariff-table th { background-color: #e5e7eb!important; color:black!important; }
         #approvalContainer .tariff-table input { color:black!important; background:white!important; }
+
+        /* EXPIRED TABLE STYLES */
+        .expired-block {
+            background-color: #fee2e2 !important; /* Red-100 */
+            border: 4px solid #991b1b !important; /* Red-800 */
+        }
+        .expired-block th {
+            background-color: #ef4444 !important; /* Red-500 */
+            color: white !important;
+            border-color: #7f1d1d !important;
+        }
+        .expired-block td {
+            border-color: #ef4444 !important;
+            color: #7f1d1d !important;
+        }
+        .expired-block input, .expired-block select, .expired-block textarea {
+            color: #7f1d1d !important;
+            font-weight: bold !important;
+        }
+        .content-hidden { display: none; }
     </style>
 </head>
 <body>
@@ -149,6 +185,7 @@
                             <button id="unlockBtn" onclick="unlockForm(false)" class="admin-only hidden bg-gray-600 text-white px-4 py-1 rounded font-bold text-xs hover:bg-gray-700 shadow">UNLOCK</button>
                             
                             <button id="addTableBtn" onclick="addNewTableBlock()" class="admin-only bg-orange-600 text-white px-3 py-1 rounded font-bold text-xs hover:bg-orange-700 shadow">Add Tariff</button>
+                            
                             <button onclick="resetForm()" class="admin-only bg-red-500 text-white px-3 py-1 rounded font-bold text-xs hover:bg-red-600 shadow">New Sheet</button>
                         </div>
                     </div>
@@ -181,14 +218,14 @@
                 <!-- Transport Table -->
                 <div class="mb-1 pt-4 border border-gray-600 bg-white p-2 rounded">
                     <div class="flex justify-between items-end mb-1">
-                        <div class="bg-amber-600 text-white px-3 py-1.5 rounded-t font-bold text-xs uppercase w-48"><i class="fas fa-truck mr-2"></i> Transport Tariff</div>
+                        <div class="bg-gray-700 text-white px-3 py-1.5 rounded-t font-bold text-xs uppercase w-48"><i class="fas fa-truck mr-2"></i> Transport Tariff</div>
                         <div class="mb-1 flex items-center gap-2">
                             <label class="text-[10px] font-bold text-gray-700 uppercase">Claimed By:</label><input type="text" class="border border-gray-600 rounded px-2 py-0.5 text-xs font-bold w-80 bg-white uppercase" value="TRANSPORTER">
-                            <button onclick="addTransportRow({}, 'tbodyTransport')" class="bg-white text-amber-700 hover:bg-gray-100 text-[10px] font-bold px-2 py-0.5 rounded no-print shadow uppercase border border-amber-600">Add Location</button>
+                            <button onclick="addTransportRow({}, 'tbodyTransport')" class="bg-white text-gray-800 hover:bg-gray-100 text-[10px] font-bold px-2 py-0.5 rounded no-print shadow uppercase border border-gray-600">Add Location</button>
                         </div>
                     </div>
                     <table class="tariff-table border border-gray-600">
-                        <thead><tr class="text-white" style="background-color: #d97706;"><th class="w-32">Transporter</th><th class="w-32">Origin</th><th class="w-32">Destination</th><th class="w-24">Discount (₹) 20"</th><th class="w-24">Discount (₹) 40"</th><th class="w-64">Remarks</th><th class="bg-white border-none w-6 no-print"></th></tr></thead>
+                        <thead><tr class="text-white" style="background-color: #4b5563;"><th class="w-32">Transporter</th><th class="w-32">Origin</th><th class="w-32">Destination</th><th class="w-24">Discount (₹) 20"</th><th class="w-24">Discount (₹) 40"</th><th class="w-64">Remarks</th><th class="bg-white border-none w-6 no-print"></th></tr></thead>
                         <tbody id="tbodyTransport"></tbody>
                     </table>
                 </div>
@@ -196,14 +233,14 @@
                 <!-- Incentive Table -->
                 <div class="mb-12 pt-2 bg-white p-2 rounded border border-gray-600">
                     <div class="flex justify-between items-end mb-1">
-                        <div class="bg-teal-700 text-white px-3 py-1.5 rounded-t font-bold text-xs uppercase"><i class="fas fa-coins mr-2"></i> Incentive Details</div>
+                        <div class="bg-gray-700 text-white px-3 py-1.5 rounded-t font-bold text-xs uppercase"><i class="fas fa-coins mr-2"></i> Incentive Details</div>
                         <div class="mb-1 flex items-center gap-2">
                             <label class="text-[10px] font-bold text-gray-700 uppercase">Claimed By:</label><input type="text" class="border border-gray-600 rounded px-2 py-0.5 text-xs font-bold w-80 bg-white uppercase" value="CHA">
-                            <button onclick="addIncentiveRow({}, 'tbodyIncentive')" class="bg-white text-teal-800 hover:bg-gray-100 text-[10px] font-bold px-2 py-0.5 rounded no-print shadow uppercase border border-teal-700">Add Row</button>
+                            <button onclick="addIncentiveRow({}, 'tbodyIncentive')" class="bg-white text-gray-800 hover:bg-gray-100 text-[10px] font-bold px-2 py-0.5 rounded no-print shadow uppercase border border-gray-700">Add Row</button>
                         </div>
                     </div>
                     <table class="tariff-table border border-gray-600">
-                        <thead><tr class="text-white" style="background-color: #0d9488;"><th class="w-48">Line</th><th class="w-24">Discount 20"</th><th class="w-24">Discount 40"</th><th class="w-96">Remarks</th><th class="bg-white border-none w-6 no-print"></th></tr></thead>
+                        <thead><tr class="text-white" style="background-color: #4b5563;"><th class="w-48">Line</th><th class="w-24">Discount 20"</th><th class="w-24">Discount 40"</th><th class="w-96">Remarks</th><th class="bg-white border-none w-6 no-print"></th></tr></thead>
                         <tbody id="tbodyIncentive"></tbody>
                     </table>
                 </div>
@@ -251,7 +288,8 @@
                     <button onclick="downloadApprovalAsExcel()" class="bg-emerald-700 text-white px-4 py-1.5 rounded text-xs font-bold shadow hover:bg-emerald-800" title="Download Excel with Formatting"><i class="fas fa-file-excel mr-1"></i> Excel</button>
                     <button onclick="downloadApprovalAsHTML()" class="bg-orange-500 text-white px-4 py-1.5 rounded text-xs font-bold shadow hover:bg-orange-600" title="Download HTML with Box Formatting"><i class="fas fa-file-code mr-1"></i> HTML</button>
 
-                    <button id="unlockAppBtn" onclick="unlockForm(true)" class="admin-only hidden bg-purple-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-purple-700 shadow">UNLOCK</button>
+                    <!-- UNLOCK BUTTON FOR EVERYONE IN APPROVAL MODE (No admin-only class) -->
+                    <button id="unlockAppBtn" onclick="unlockForm(true)" class="bg-purple-600 text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-purple-700 shadow hidden">UNLOCK</button>
                 </div>
             </div>
             
@@ -432,8 +470,38 @@
         const b=Array.from(document.querySelectorAll('.table-block')),g={};
         b.forEach(x=>{const i=x.id.split('_')[1],k=`${document.getElementById(`sl_${i}`).value}|${document.getElementById(`tt_${i}`).value}`;if(!g[k])g[k]=[];g[k].push({id:i})});
         const td=new Date().toISOString().split('T')[0];
-        for(let k in g){g[k].forEach((x,i)=>{const last=i===g[k].length-1,dt=document.getElementById(`dt_${x.id}`).value,st=document.getElementById(`status_${x.id}`),hd=document.getElementById(`headerBox_${x.id}`);
-        if(!last||(dt&&dt<td)){st.innerText="EXPIRED";st.className="px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase w-full status-expired";hd.classList.replace('bg-[#1e293b]','bg-red-800')}else{st.innerText="Approved & Valid";st.className="px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase w-full status-valid";hd.classList.replace('bg-red-800','bg-[#1e293b]')}})}
+        for(let k in g){g[k].forEach((x,i)=>{const last=i===g[k].length-1,dt=document.getElementById(`dt_${x.id}`).value,st=document.getElementById(`status_${x.id}`),hd=document.getElementById(`headerBox_${x.id}`),tb=document.getElementById(`tableBlock_${x.id}`),content=document.getElementById(`tableContent_${x.id}`),tglBtn=document.getElementById(`toggleBtn_${x.id}`);
+        const isExp = (!last||(dt&&dt<td));
+        if(isExp){
+            st.innerText="EXPIRED";st.className="px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase w-full status-expired";
+            hd.classList.replace('bg-[#1e293b]','bg-red-800');
+            tb.classList.remove('bg-white','border-gray-600');
+            tb.classList.add('bg-red-50','border-red-800','border-4','expired-block');
+            
+            // Auto hide content if expired
+            content.classList.add('hidden');
+            if(tglBtn) tglBtn.innerHTML = '<i class="fas fa-eye"></i> Show';
+        }else{
+            st.innerText="Approved & Valid";st.className="px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase w-full status-valid";
+            hd.classList.replace('bg-red-800','bg-[#1e293b]');
+            tb.classList.add('bg-white','border-gray-600');
+            tb.classList.remove('bg-red-50','border-red-800','border-4','expired-block');
+            
+            content.classList.remove('hidden');
+            if(tglBtn) tglBtn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide';
+        }})}
+    }
+
+    function toggleTableContent(id) {
+        const content = document.getElementById(`tableContent_${id}`);
+        const btn = document.getElementById(`toggleBtn_${id}`);
+        if(content.classList.contains('hidden')){
+            content.classList.remove('hidden');
+            btn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide';
+        } else {
+            content.classList.add('hidden');
+            btn.innerHTML = '<i class="fas fa-eye"></i> Show';
+        }
     }
 
     function updateTableValues(id,pres=false){
@@ -445,7 +513,26 @@
     function addNewTableBlock(){
         tableCounter++;const id=tableCounter,div=document.createElement('div');div.className="table-block mb-16 border border-gray-600 bg-white pb-4 rounded p-2 shadow-sm";div.id=`tableBlock_${id}`;
         let rows='';slabs.forEach((s,i)=>{rows+=`<tr class="${s.label.includes('40" Upto')||s.label.includes('40" Over')?'highlight-row':''}"><td class="bg-yellow-100"><input type="text" id="t_${id}_lbl_${i}" class="font-bold text-blue-900 w-full" readonly></td><td class="font-bold bg-transparent whitespace-nowrap">${s.label}</td><td><input type="number" id="t_${id}_pub_${i}" value="${s.p}" readonly tabindex="-1"></td><td><input type="number" id="t_${id}_railm_${i}" value="${s.m}" readonly tabindex="-1"></td><td><input type="number" id="t_${id}_disc_${i}" oninput="calcTableRow(${id},${i})" class="bg-yellow-col"></td><td><input type="number" id="t_${id}_slr_${i}" readonly tabindex="-1"></td><td><input type="number" id="t_${id}_slb_${i}" readonly tabindex="-1"></td><td><input type="number" id="t_${id}_slw_${i}" oninput="calcTableRow(${id},${i})" class="bg-blue-50 font-bold text-blue-800"></td><td><input type="number" id="t_${id}_slf_${i}" oninput="calcTableRow(${id},${i})" class="bg-blue-50 font-bold text-blue-800"></td><td><input type="number" id="t_${id}_sls_${i}" oninput="calcTableRow(${id},${i})" class="bg-blue-50 font-bold text-blue-800"></td><td><input type="number" id="t_${id}_cha_${i}" oninput="calcTableRow(${id},${i})" class="bg-teal-col"></td><td><input type="number" id="t_${id}_fwd_${i}" oninput="calcTableRow(${id},${i})" class="bg-teal-col"></td><td><input type="number" id="t_${id}_sub_${i}" oninput="calcTableRow(${id},${i})" class="bg-yellow-col font-bold"></td><td class="bg-gray-col"><span id="t_${id}_res_w_${i}"></span></td><td class="bg-gray-col"><span id="t_${id}_res_f_${i}"></span></td><td class="bg-gray-col"><span id="t_${id}_res_s_${i}"></span></td><td class="bg-red-col"><span id="t_${id}_res_t_${i}"></span></td></tr>`});
-        div.innerHTML=`<div class="upload-section-mini w-1/2 no-print"><div class="upload-box-mini" onclick="triggerUpload(${id})"><span style="font-size:18px;">📂</span> <span id="uploadStatus_${id}" class="text-xs font-bold text-gray-700">Upload Doc</span></div><input type="file" id="fileInput_${id}" style="display:none" onchange="uploadToCloudinary(this,${id})"><input type="hidden" id="docLink_${id}"><div class="text-center mt-1"><button type="button" id="previewBtn_${id}" class="bg-teal-600 text-white text-[10px] font-bold py-0.5 px-2 rounded hidden hover:bg-teal-700 shadow" onclick="openDocModal(${id})">View</button></div></div><div id="headerBox_${id}" class="grid grid-cols-5 gap-4 mb-2 bg-[#1e293b] p-2 rounded border border-gray-800 items-end"><div class="col-span-1 flex flex-col justify-end"><button onclick="addNewTableBlock()" class="bg-orange-500 text-white text-[10px] font-bold py-1 px-2 rounded uppercase shadow mb-1 w-full">Add Tariff Table</button><div id="status_${id}" class="px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase status-valid w-full">Approved & Valid</div></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Type *</label><select id="tt_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-purple-50 text-purple-900 border-purple-300"><option value="">-- Select --</option><option value="FACTORY">FACTORY</option><option value="OWPL">OWPL</option><option value="PSWC">PSWC</option><option value="ADDITIONAL SUBSIDY">ADDITIONAL SUBSIDY</option></select></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Line *</label><select id="sl_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-white uppercase border-blue-500"><option value="">-- Select --</option>${Object.keys(lineData).map(k=>`<option value="${k}">${k}</option>`).join('')}</select></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">From</label><input type="date" id="df_${id}" class="input-field h-8 bg-white"></div><div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">To</label><input type="date" id="dt_${id}" class="input-field h-8 bg-white" onchange="updateTableValues(${id},true)"></div></div><div class="mb-2"><textarea id="tbl_rem_${id}" class="w-full border border-black rounded p-1 text-xs bg-yellow-100 font-bold resize-none" rows="2" placeholder="Table remarks..."></textarea></div><div class="flex justify-end mb-1"><button onclick="if(confirm('Remove?')){this.closest('.table-block').remove();checkExpiryLogic();}" class="text-red-500 font-bold text-xs hover:underline no-pdf">Remove Table</button></div><div class="overflow-x-auto"><table class="tariff-table border border-gray-600"><thead class="th-main text-white"><tr><th class="w-32">Line /Type</th><th class="w-40">Weight Slab</th><th>Public</th><th>Rail Margins</th><th class="bg-amber-600 border-amber-800">Discount Rail</th><th>Line Disc Rail</th><th>Line Disc BSS</th><th>Line Disc WH</th><th>Line Disc F/S</th><th>Line Disc Self</th><th class="bg-emerald-700 border-emerald-800">CHA Inc</th><th class="bg-emerald-700 border-emerald-800">Fwd Inc</th><th>Subsidy</th><th class="bg-slate-700 text-white border-slate-800">Margin WH</th><th class="bg-slate-700 text-white border-slate-800">Margin F/S</th><th class="bg-slate-700 text-white border-slate-800">Margin Self</th><th class="bg-red-700 text-white border-red-900">Billing</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+        
+        div.innerHTML=`
+            <div id="headerBox_${id}" class="grid grid-cols-5 gap-4 mb-2 bg-[#1e293b] p-2 rounded border border-gray-800 items-end relative">
+                <button id="toggleBtn_${id}" onclick="toggleTableContent(${id})" class="absolute top-0 right-0 m-1 text-white text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded shadow z-10"><i class="fas fa-eye-slash"></i> Hide</button>
+                <div class="col-span-1 flex flex-col justify-end">
+                    <button onclick="addNewTableBlock()" class="bg-orange-500 text-white text-[10px] font-bold py-1 px-2 rounded uppercase shadow mb-1 w-full">Add Tariff Table</button>
+                    <div id="status_${id}" class="px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase status-valid w-full">Approved & Valid</div>
+                </div>
+                <div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Type *</label><select id="tt_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-purple-50 text-purple-900 border-purple-300"><option value="">-- Select --</option><option value="FACTORY">FACTORY</option><option value="OWPL">OWPL</option><option value="PSWC">PSWC</option><option value="ADDITIONAL SUBSIDY">ADDITIONAL SUBSIDY</option></select></div>
+                <div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Line *</label><select id="sl_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-white uppercase border-blue-500"><option value="">-- Select --</option>${Object.keys(lineData).map(k=>`<option value="${k}">${k}</option>`).join('')}</select></div>
+                <div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">From</label><input type="date" id="df_${id}" class="input-field h-8 bg-white"></div>
+                <div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">To</label><input type="date" id="dt_${id}" class="input-field h-8 bg-white" onchange="updateTableValues(${id},true)"></div>
+            </div>
+            
+            <div id="tableContent_${id}" class="content-collapsible">
+                <div class="upload-section-mini w-1/2 no-print mb-1"><div class="upload-box-mini inline-block mr-2" onclick="triggerUpload(${id})"><span style="font-size:18px;">📂</span> <span id="uploadStatus_${id}" class="text-xs font-bold text-gray-700">Upload Doc</span></div><input type="file" id="fileInput_${id}" style="display:none" onchange="uploadToCloudinary(this,${id})"><input type="hidden" id="docLink_${id}"><button type="button" id="previewBtn_${id}" class="bg-teal-600 text-white text-[10px] font-bold py-0.5 px-2 rounded hidden hover:bg-teal-700 shadow" onclick="openDocModal(${id})">View</button></div>
+                <div class="mb-2"><textarea id="tbl_rem_${id}" class="w-full border border-black rounded p-1 text-xs bg-yellow-100 font-bold resize-none text-black" rows="2" placeholder="Table remarks..."></textarea></div>
+                <div class="flex justify-end mb-1"><button onclick="if(confirm('Remove?')){this.closest('.table-block').remove();checkExpiryLogic();}" class="text-red-500 font-bold text-xs hover:underline no-pdf">Remove Table</button></div>
+                <div class="overflow-x-auto"><table class="tariff-table border border-gray-600"><thead class="th-main text-white"><tr><th class="w-32">Line /Type</th><th class="w-40">Weight Slab</th><th>Public</th><th>Rail Margins</th><th class="bg-amber-600 border-amber-800">Discount Rail</th><th>Line Disc Rail</th><th>Line Disc BSS</th><th>Line Disc WH</th><th>Line Disc F/S</th><th>Line Disc Self</th><th class="bg-emerald-700 border-emerald-800">CHA Inc</th><th class="bg-emerald-700 border-emerald-800">Fwd Inc</th><th>Subsidy</th><th class="bg-slate-700 text-white border-slate-800">Margin WH</th><th class="bg-slate-700 text-white border-slate-800">Margin F/S</th><th class="bg-slate-700 text-white border-slate-800">Margin Self</th><th class="bg-red-700 text-white border-red-900">Billing</th></tr></thead><tbody>${rows}</tbody></table></div>
+            </div>`;
         const container = isApprovalMode ? document.getElementById('ap_tablesContainer') : document.getElementById('tablesContainer');
         container.appendChild(div);
         updateTableValues(id);
@@ -568,6 +655,9 @@
 
         // 6. Make Editable
         disableAllInputs(false);
+        // Reset ID for fresh creation
+        editingRecordRef = null;
+        document.getElementById('tariffNo').value = `AP-${new Date().getFullYear()}${Math.floor(1000+Math.random()*9000)}`;
     }
 
     function captureFullData(){
@@ -646,31 +736,37 @@
         
         try {
             // --- STRICT SAVE VS UPDATE LOGIC ---
-            // 1. APPROVAL MODE: Always New (Draft)
+            // 1. APPROVAL MODE: Always New (Draft) unless editing
             if (isApprovalMode) {
-                const newRef = `AP-${new Date().getFullYear()}${Math.floor(1000+Math.random()*9000)}`;
-                document.getElementById('tariffNo').value = newRef;
-                editingRecordRef = null; // Force creation
+                // If editingRecordRef is null, it's new. If set, it's an update.
+                // NOTE: 'isApproval' flag is set to TRUE in captureFullData
+                if (!editingRecordRef) {
+                    const newRef = `AP-${new Date().getFullYear()}${Math.floor(1000+Math.random()*9000)}`;
+                    document.getElementById('tariffNo').value = newRef;
+                }
+                // If editingRecordRef exists (loaded from old list or tariff list), it keeps that ref.
             }
             // 2. MAIN FORM: UPDATE Mode
             else if (mode === 'update') {
-                // Ensure we have a valid Ref ID to update
+                // Main Form save -> isApproval will be FALSE
                 if (!editingRecordRef) {
                       alert("Error: No record loaded to update. Switching to New Save.");
-                      mode = 'new'; // Fallback
-                } else {
-                    // Keep editingRecordRef to trigger "edit" action
-                }
+                      mode = 'new'; 
+                } 
             }
             // 3. MAIN FORM: NEW Mode
             if (mode === 'new' && !isApprovalMode) {
                  const newRef = `TS-${new Date().getFullYear()}${Math.floor(1000+Math.random()*9000)}`;
                  document.getElementById('tariffNo').value = newRef;
-                 editingRecordRef = null; // Force creation
+                 editingRecordRef = null; 
             }
 
             const d=captureFullData(),fd=new FormData();
             
+            // STRICT TAGGING: Overwrite captureFullData's return just in case
+            if(isApprovalMode) d.isApproval = true;
+            else d.isApproval = false;
+
             // ACTION DETERMINATION
             if(editingRecordRef){
                 fd.append("action","edit");
@@ -725,34 +821,45 @@
                 } catch(e) { return null; }
             }).filter(r=>r!==null).sort((a,b)=>a.name.localeCompare(b.name));
             
-            // Populate Dropdowns using PRE-PARSED data
-            const sel=document.getElementById('cloudHistory');
-            const tariffSel=document.getElementById('allTariffHistory');
-            const approvalSel=document.getElementById('approvalHistory');
-            const mainAppSel = document.getElementById('mainApprovalHistory');
-            
-            sel.innerHTML='<option>-- All Records --</option>';
-            tariffSel.innerHTML='<option>-- Tariffs --</option>';
-            approvalSel.innerHTML='<option>-- Old Approvals --</option>';
-            if(mainAppSel) mainAppSel.innerHTML='<option>-- Old Approvals --</option>';
-            
-            sheetRecords.forEach((r,i)=>{
-                let isApp = (r.parsedData.isApproval === true);
-                // 1. Filter out Approvals from Main
-                if(!isApp) {
-                    const o1=document.createElement('option');o1.value=i;o1.text=r.name;sel.appendChild(o1);
-                } else {
-                    // Add to Approval Dropdowns
-                    const o3=document.createElement('option');o3.value=i;o3.text=r.name;approvalSel.appendChild(o3);
-                    if(mainAppSel) mainAppSel.appendChild(o3.cloneNode(true));
-                }
-                // 2. All Tariffs (All)
-                const o2=document.createElement('option');o2.value=i;o2.text=r.name;tariffSel.appendChild(o2);
-            });
+            // Populate Dropdowns using re-rendering instead of display:none
+            repopulateDropdowns();
             
             document.getElementById('syncStatus').innerText=`Total Sheets (${sheetRecords.length})`;
         };
         const s=document.createElement('script');s.src=`https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=responseHandler:handleGvizResponse&tq=SELECT%20A,B,C,D,E`;document.body.appendChild(s);
+    }
+
+    function repopulateDropdowns(searchTerm = "") {
+        const sel=document.getElementById('cloudHistory');
+        const tariffSel=document.getElementById('allTariffHistory');
+        const approvalSel=document.getElementById('approvalHistory');
+        const mainAppSel = document.getElementById('mainApprovalHistory');
+        
+        const term = searchTerm.toLowerCase();
+
+        sel.innerHTML='<option>-- All Records --</option>';
+        tariffSel.innerHTML='<option>-- Tariffs --</option>';
+        approvalSel.innerHTML='<option>-- Old Approvals --</option>';
+        if(mainAppSel) mainAppSel.innerHTML='<option>-- Old Approvals --</option>';
+        
+        sheetRecords.forEach((r,i)=>{
+            if(term && !r.name.toLowerCase().includes(term)) return;
+
+            // Updated check to handle string "true" if any legacy data exists
+            let isApp = (r.parsedData.isApproval === true || r.parsedData.isApproval === "true");
+            
+            // 1. Filter out Approvals from Main (Show only if isApproval is NOT true)
+            // Logic Change: If isApproval is explicitly FALSE or undefined, show in main list.
+            if(!isApp) {
+                const o1=document.createElement('option');o1.value=i;o1.text=r.name;sel.appendChild(o1);
+            } else {
+                // If isApproval is TRUE, show in Approval Dropdowns
+                const o3=document.createElement('option');o3.value=i;o3.text=r.name;approvalSel.appendChild(o3);
+                if(mainAppSel) mainAppSel.appendChild(o3.cloneNode(true));
+            }
+            // 2. All Tariffs (All)
+            const o2=document.createElement('option');o2.value=i;o2.text=r.name;tariffSel.appendChild(o2);
+        });
     }
     
     function loadRecordFromDropdown(){loadSelectedRecord(document.getElementById('cloudHistory').value)}
@@ -768,11 +875,17 @@
         
         const tempRef = d.basic.ref;
         resetForm(true);
+        
+        // LOGIC UPDATE: Always keep the Ref ID for tracking
         editingRecordRef = tempRef;
+        document.getElementById('tariffNo').value = tempRef;
         
         const set=(id,v)=>{if(document.getElementById(id))document.getElementById(id).value=v;if(document.getElementById('ap_'+id))document.getElementById('ap_'+id).value=v;};
         set('commodity',d.basic.comm);set('customerName',d.basic.cust);set('customerType',d.basic.type);set('volMonth',d.basic.vol);set('creditDays',d.basic.cred);set('salesPerson',d.basic.ver);set('billingTerms',d.basic.bill);set('stream',d.basic.stream);set('remTHC',d.remarks.thc);set('remSpecial',d.remarks.special);set('remAdd',d.remarks.add);
-        document.getElementById('tariffNo').value=d.basic.ref;document.getElementById('dateToday').value=d.basic.date;
+        
+        if(d.emailBody) document.getElementById('approvalEmailBody').value = d.emailBody;
+
+        document.getElementById('dateToday').value=d.basic.date;
         document.getElementById('tablesContainer').innerHTML='';tableCounter=0;document.getElementById('ap_tablesContainer').innerHTML='';
         d.tables.forEach(t=>{addNewTableBlock();const id=tableCounter;document.getElementById(`tt_${id}`).value=t.tt;document.getElementById(`sl_${id}`).value=t.sl;document.getElementById(`df_${id}`).value=t.df;document.getElementById(`dt_${id}`).value=t.dt;document.getElementById(`tbl_rem_${id}`).value=t.rem;if(t.docLink){document.getElementById(`docLink_${id}`).value=t.docLink;document.getElementById(`previewBtn_${id}`).classList.remove('hidden');}t.rows.forEach((row,x)=>{document.getElementById(`t_${id}_pub_${x}`).value=row.pub;document.getElementById(`t_${id}_railm_${x}`).value=row.railm;document.getElementById(`t_${id}_disc_${x}`).value=row.disc;document.getElementById(`t_${id}_slr_${x}`).value=row.slr;document.getElementById(`t_${id}_slb_${x}`).value=row.slb;document.getElementById(`t_${id}_slw_${x}`).value=row.slw;document.getElementById(`t_${id}_slf_${x}`).value=row.slf;document.getElementById(`t_${id}_sls_${x}`).value=row.sls;document.getElementById(`t_${id}_cha_${x}`).value=row.cha;document.getElementById(`t_${id}_fwd_${x}`).value=row.fwd;document.getElementById(`t_${id}_sub_${x}`).value=row.sub;calcTableRow(id,x)});updateTableValues(id,true)});
         document.getElementById('tbodyTransport').innerHTML='';d.transport.forEach(t=>addTransportRow({t:t.transporter,d:t.destination,d20:t.d20,d40:t.d40,rem:t.remarks}));
@@ -799,27 +912,30 @@
                 document.getElementById('unlockBtn').classList.remove('hidden');
             }
         } else {
-            if(isAdmin) {
-                document.getElementById('unlockAppBtn').classList.remove('hidden');
-            }
+            // Approval Mode - Show unlock for everyone
+            document.getElementById('unlockAppBtn').classList.remove('hidden');
         }
     }
     
     function unlockForm(forApproval = false){
+        if(forApproval) {
+             // No password for Approval Unlock
+             disableAllInputs(false);
+             document.getElementById('saveAppBtn').classList.remove('hidden');
+             document.getElementById('unlockAppBtn').classList.add('hidden');
+             return;
+        }
+        
         if(prompt("Password:")==="4209211"){
             disableAllInputs(false);
-            if(forApproval) {
-                document.getElementById('saveAppBtn').classList.remove('hidden');
-                document.getElementById('unlockAppBtn').classList.add('hidden');
-            } else {
-                document.getElementById('unlockBtn').classList.add('hidden');
-                document.getElementById('saveBtn').classList.add('hidden'); 
-                
-                const updBtn = document.getElementById('updateBtn');
-                if(updBtn) updBtn.classList.remove('hidden'); 
-                
-                document.getElementById('addTableBtn').disabled=false;
-            }
+            // for Main Form Unlock
+            document.getElementById('unlockBtn').classList.add('hidden');
+            document.getElementById('saveBtn').classList.add('hidden'); 
+            
+            const updBtn = document.getElementById('updateBtn');
+            if(updBtn) updBtn.classList.remove('hidden'); 
+            
+            document.getElementById('addTableBtn').disabled=false;
         } else {
             alert("Incorrect Password!");
         }
@@ -1148,233 +1264,6 @@
 
         XLSX.utils.book_append_sheet(wb, ws, "Approval Request");
         XLSX.writeFile(wb, `Approval_Request_${new Date().toISOString().split('T')[0]}.xlsx`);
-    }
-    
-    function sendEmail(){/* Simplified */ window.location.href="mailto:?subject=Tariff&body=Check Attachment";}
-    function filterDropdown(){const v=document.getElementById('searchBox').value.toLowerCase(),o=document.getElementById('cloudHistory').options;for(let i=1;i<o.length;i++)o[i].style.display=o[i].text.toLowerCase().includes(v)?"":"none"}
-    function filterSidebarList(){const v=document.getElementById('sidebarSearch').value.toLowerCase(),l=document.getElementById('customerList').getElementsByTagName('li');for(let i=0;i<l.length;i++)l[i].style.display=l[i].innerText.toLowerCase().includes(v)?"flex":"none"}
-    function findAndLoadCustomer(n){const m=sheetRecords.filter(r=>r.name.toUpperCase()===n.toUpperCase()).sort((a,b)=>new Date(b.date)-new Date(a.date));if(m.length>0)loadSelectedRecord(sheetRecords.indexOf(m[0]));else{if(confirm("New sheet for "+n+"?")){resetForm(true);document.getElementById('customerName').value=n.toUpperCase()}}}
-    function openCustomerModal(){document.getElementById('customerModal').classList.remove('hidden');document.getElementById('customerModal').style.display='flex'}
-    function closeCustomerModal(){document.getElementById('customerModal').classList.add('hidden');document.getElementById('customerModal').style.display='none'}
-    function saveBulkCustomers(){const v=document.getElementById('bulkCustomerInput').value;if(v)v.split(',').forEach(n=>{if(n.trim()&&!customerList.some(c=>c.name===n.trim()))customerList.push({name:n.trim(),date:new Date().toLocaleDateString()})});renderCustomerList();closeCustomerModal()}
-    function openReportModal(){document.getElementById('reportModal').classList.remove('hidden');document.getElementById('reportModal').style.display='flex';populateReportFilters();generateMasterReport();}
-    function closeReportModal(){document.getElementById('reportModal').classList.add('hidden');document.getElementById('reportModal').style.display='none'}
-    function resetReportFilters(){
-        document.getElementById('reportFilterCustomerSelect').value="";
-        document.getElementById('reportFilterCust').value="";
-        document.getElementById('reportFilterSales').value="";
-        document.getElementById('reportFilterComm').value="";
-        document.getElementById('reportFilterLine').value="";
-        document.getElementById('reportFilterType').value="";
-        generateMasterReport();
-    }
-    function populateReportFilters(){
-        // ... existing populate filters code ...
-        const custSelect = document.getElementById('reportFilterCustomerSelect'); 
-        const salesFilter = document.getElementById('reportFilterSales'); 
-        const commFilter = document.getElementById('reportFilterComm'); 
-        const lineFilter = document.getElementById('reportFilterLine'); 
-        const typeFilter = document.getElementById('reportFilterType');
-
-        // Reset all
-        if(custSelect) custSelect.innerHTML = '<option value="">All Customers</option>';
-        if(salesFilter) salesFilter.innerHTML = '<option value="">All Sales Persons</option>';
-        if(commFilter) commFilter.innerHTML = '<option value="">All Commodities</option>';
-        if(lineFilter) lineFilter.innerHTML = '<option value="">All Shipping Lines</option>';
-        if(typeFilter) typeFilter.innerHTML = '<option value="">All Tariff Types</option>';
-
-        const uCust = new Set(), uSales = new Set(), uComm = new Set(), uLine = new Set(), uType = new Set();
-        
-        sheetRecords.forEach(r=>{
-            const d = r.parsedData; 
-            if(!d) return;
-            if(d.basic.cust) uCust.add(d.basic.cust);
-            if(d.basic.ver) uSales.add(d.basic.ver);
-            if(d.basic.comm) uComm.add(d.basic.comm);
-            if(d.tables && Array.isArray(d.tables)) {
-                d.tables.forEach(t => {
-                    if(t.sl) uLine.add(t.sl);
-                    if(t.tt) uType.add(t.tt);
-                });
-            }
-        });
-        
-        if(custSelect) Array.from(uCust).sort().forEach(c=>custSelect.innerHTML+=`<option value="${c}">${c}</option>`);
-        if(salesFilter) Array.from(uSales).sort().forEach(s=>salesFilter.innerHTML+=`<option value="${s}">${s}</option>`);
-        if(commFilter) Array.from(uComm).sort().forEach(c=>commFilter.innerHTML+=`<option value="${c}">${c}</option>`);
-        if(lineFilter) Array.from(uLine).sort().forEach(l=>lineFilter.innerHTML+=`<option value="${l}">${l}</option>`);
-        if(typeFilter) Array.from(uType).sort().forEach(t=>typeFilter.innerHTML+=`<option value="${t}">${t}</option>`);
-    }
-    function generateMasterReport(){
-        // ... existing generate report code ...
-        const contentDiv = document.getElementById('reportContent');
-        if(!contentDiv) return;
-        
-        if(sheetRecords.length === 0) {
-            contentDiv.innerHTML = "<p class='p-4 text-center font-bold text-black'>No data synced. Please close and click refresh icon on top.</p>";
-            return;
-        }
-
-        const filters = {
-            cust: document.getElementById('reportFilterCustomerSelect')?.value || "",
-            search: document.getElementById('reportFilterCust')?.value.toLowerCase() || "",
-            sales: document.getElementById('reportFilterSales')?.value || "",
-            comm: document.getElementById('reportFilterComm')?.value || "",
-            line: document.getElementById('reportFilterLine')?.value || "",
-            type: document.getElementById('reportFilterType')?.value || ""
-        };
-
-        const htmlParts = [];
-        htmlParts.push('<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">');
-        
-        let count = 0;
-
-        sheetRecords.forEach(rec => {
-            const d = rec.parsedData;
-            if(!d || !d.basic) return;
-
-            const f = {
-                cust: d.basic.cust || "Unknown",
-                sales: d.basic.ver || "-",
-                comm: d.basic.comm || "-",
-                date: d.basic.date || "",
-                ref: d.basic.ref || ""
-            };
-
-            if(filters.cust && f.cust !== filters.cust) return;
-            if(filters.sales && f.sales !== filters.sales) return;
-            if(filters.comm && f.comm !== filters.comm) return;
-            if(filters.search && !(f.cust + " " + f.ref).toLowerCase().includes(filters.search)) return;
-
-            if(!d.tables || !Array.isArray(d.tables)) return;
-
-            const validTables = d.tables.filter(t => {
-                if(filters.line && t.sl !== filters.line) return false;
-                if(filters.type && t.tt !== filters.type) return false;
-                return true;
-            });
-
-            if(validTables.length === 0) return;
-
-            count++;
-            
-            // Build Transport & Incentive Summaries
-            const transSummary = (d.transport || []).map(t => 
-                `<div class="text-[10px] text-black border-b border-black pb-1 mb-1"><b>${t.transporter}</b> -> ${t.destination} (${t.d20}/${t.d40})</div>`
-            ).join('') || '<span class="text-[10px] text-black italic">No Transport</span>';
-
-            const incSummary = (d.incentives || []).map(i => 
-                 `<div class="text-[10px] text-black border-b border-black pb-1 mb-1"><b>${i.line}</b> (${i.d20}/${i.d40})</div>`
-            ).join('') || '<span class="text-[10px] text-black italic">No Incentives</span>';
-
-            let cardHtml = `
-            <div class="report-card bg-white border-2 border-black shadow-sm flex flex-col">
-                <div class="bg-gray-300 p-2 border-b-2 border-black flex justify-between items-start">
-                    <div class="w-3/4">
-                        <div class="text-xs font-extrabold text-black uppercase truncate" title="${f.cust}">${f.cust}</div>
-                        <div class="text-[10px] font-bold text-black truncate">${f.comm}</div>
-                    </div>
-                    <div class="text-right">
-                         <div class="text-[9px] font-bold bg-orange-200 border border-black text-black px-1 rounded mb-1">${f.sales}</div>
-                         <div class="text-[9px] font-bold text-black">${f.ref}</div>
-                    </div>
-                </div>
-                <div class="p-2 border-b border-black bg-gray-100">
-                    <div class="grid grid-cols-2 gap-2">
-                        <div><u class="text-[10px] font-bold text-black">Transport</u>${transSummary}</div>
-                        <div><u class="text-[10px] font-bold text-black">Incentives</u>${incSummary}</div>
-                    </div>
-                </div>
-                <div class="p-2 overflow-x-auto">
-            `;
-
-            validTables.forEach(tbl => {
-                 cardHtml += `<div class="mb-2 border border-black">
-                    <div class="bg-gray-200 text-[10px] font-bold text-black p-1 border-b border-black">${tbl.sl} - ${tbl.tt}</div>
-                    <table class="w-full text-[9px] text-black border-collapse">
-                        <thead>
-                            <tr class="bg-gray-100">
-                                <th class="border border-black p-1">Slab</th><th class="border border-black p-1">Rail</th><th class="border border-black p-1">Line R</th><th class="border border-black p-1">Line B</th><th class="border border-black p-1">Line W</th><th class="border border-black p-1">Line F</th><th class="border border-black p-1">Line S</th><th class="border border-black p-1">CHA</th><th class="border border-black p-1">Fwd</th><th class="border border-black p-1">Sub</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
-                 (tbl.rows || []).forEach((r, i) => {
-                     const slabName = slabs[i]?.label.replace('20" ', '').replace('40" ', '') || "Slab "+i;
-                     cardHtml += `<tr>
-                        <td class="border border-black p-1 font-bold whitespace-nowrap">${slabName}</td>
-                        <td class="border border-black p-1 text-center">${r.disc}</td>
-                        <td class="border border-black p-1 text-center">${r.slr}</td>
-                        <td class="border border-black p-1 text-center">${r.slb}</td>
-                        <td class="border border-black p-1 text-center">${r.slw}</td>
-                        <td class="border border-black p-1 text-center">${r.slf}</td>
-                        <td class="border border-black p-1 text-center">${r.sls}</td>
-                        <td class="border border-black p-1 text-center">${r.cha}</td>
-                        <td class="border border-black p-1 text-center">${r.fwd}</td>
-                        <td class="border border-black p-1 text-center">${r.sub}</td>
-                     </tr>`;
-                 });
-                 cardHtml += `</tbody></table></div>`;
-            });
-
-            cardHtml += `</div></div>`;
-            htmlParts.push(cardHtml);
-        });
-
-        htmlParts.push("</div>");
-        
-        if(count === 0) {
-            contentDiv.innerHTML = "<p class='p-10 text-center font-bold text-black text-lg'>No matching records found.</p>";
-        } else {
-            contentDiv.innerHTML = htmlParts.join('');
-        }
-    }
-    function exportReportToExcel(){
-        if(sheetRecords.length === 0) return alert("Please generate a report first.");
-        // Get current filter values to apply to export
-        const filters = {
-            cust: document.getElementById('reportFilterCustomerSelect')?.value || "",
-            search: document.getElementById('reportFilterCust')?.value.toLowerCase() || "",
-            sales: document.getElementById('reportFilterSales')?.value || "",
-            comm: document.getElementById('reportFilterComm')?.value || "",
-            line: document.getElementById('reportFilterLine')?.value || "",
-            type: document.getElementById('reportFilterType')?.value || ""
-        };
-
-        const flatData = []; 
-        flatData.push(["Ref No", "Customer Name", "Sales Person", "Commodity", "Ship Line", "Tariff Type", "Weight Slab", "Discount Rail", "Line Disc Rail", "Line Disc BSS", "Line Disc WH", "Line Disc F/S", "Line Disc Self", "CHA Inc", "Fwd Inc", "Trans Sub", "Transporter", "Trans Disc 20\"", "Trans Disc 40\"", "Incentive Line", "Inc 20\"", "Inc 40\"", "End Date"]);
-        
-        sheetRecords.forEach(rec => {
-            const d = rec.parsedData; if(!d || !d.basic) return;
-            const f = { cust: d.basic.cust, sales: d.basic.ver, comm: d.basic.comm, ref: d.basic.ref };
-
-            if(filters.cust && f.cust !== filters.cust) return;
-            if(filters.sales && f.sales !== filters.sales) return;
-            if(filters.comm && f.comm !== filters.comm) return;
-            if(filters.search && !(f.cust + " " + f.ref).toLowerCase().includes(filters.search)) return;
-
-            let transStr = (d.transport||[]).map(t => t.transporter).join(', '); 
-            let transD20 = (d.transport||[]).map(t => t.d20).join(', '); 
-            let transD40 = (d.transport||[]).map(t => t.d40).join(', ');
-            let incStr = (d.incentives||[]).map(i => i.line).join(', '); 
-            let incD20 = (d.incentives||[]).map(i => i.d20).join(', '); 
-            let incD40 = (d.incentives||[]).map(i => i.d40).join(', ');
-
-            if(d.tables && Array.isArray(d.tables)) {
-                d.tables.forEach(tbl => {
-                    if (filters.line && tbl.sl !== filters.line) return; 
-                    if (filters.type && tbl.tt !== filters.type) return;
-                    const endDate = tbl.dt || "";
-                    (tbl.rows||[]).forEach((row, idx) => { 
-                        const slabLabel = slabs[idx]?.label || "Unknown"; 
-                        flatData.push([ f.ref, f.cust, f.sales, f.comm, tbl.sl, tbl.tt, slabLabel, row.disc, row.slr, row.slb, row.slw, row.slf, row.sls, row.cha, row.fwd, row.sub, transStr, transD20, transD40, incStr, incD20, incD40, endDate ]); 
-                    });
-                });
-            }
-        });
-        const ws = XLSX.utils.aoa_to_sheet(flatData); 
-        const wb = XLSX.utils.book_new(); 
-        XLSX.utils.book_append_sheet(wb, ws, "Master Tariff Report"); 
-        XLSX.writeFile(wb, 'Master_Tariff_Report.xlsx');
     }
     
     // MOVED TO END: Ensure everything is defined
