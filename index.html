@@ -416,6 +416,18 @@
     const subsidyData={'FACTORY':[0,0,0,0,0,0,0],'OWPL':[3200,3200,3200,3200,3200,5600,5600],'PSWC':[2500,2500,2500,2500,2500,4500,4500],'ADDITIONAL SUBSIDY':[0,0,0,0,0,0,0]};
     const lineData={'CUSTOMER':{bss:[0,0,0,0,0,0,0],rail:[0,0,0,0,0,0,0],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'MSC':{bss:[933,1161,1335,1414,1414,1548,1744],rail:[500,500,500,500,500,500,500],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'COSCO':{bss:[0,0,0,0,0,0,0],rail:[1490,2120,1900,2320,-2980,2790,2790],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'HAPAG':{bss:[933,1161,1335,1414,1414,1548,1744],rail:[600,600,600,600,600,1200,1200],wh:[2095,2095,2095,2162,4187,2550,2550],fs:[2570,2570,2570,2612,4562,3650,3650],self:[910,910,910,800,2225,700,700]},'CMA CGM':{bss:[933,910,1050,1120,1120,1290,1190],rail:[500,500,500,500,500,1000,1000],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'HMM LINE':{bss:[933,1161,1335,1414,1414,1548,1744],rail:[750,750,750,750,750,1250,1250],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'MAERSK':{bss:[5964,6632,9000,9630,9630,8552,10047],rail:[933,1161,1335,1414,1414,1548,1744],wh:[-1598,-1598,-1598,-923,1102,-1576,-1576],fs:[-1123,-1123,-1123,-473,1477,-476,-476],self:[-2243,-2243,-2243,-1768,-343,-2696,-2696]},'DEFAULT':{bss:[0,0,0,0,0,0,0],rail:[0,0,0,0,0,0,0],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]}};
     ['OOCL','SEABRIDGE','ONE LINE'].forEach(k=>lineData[k]=lineData['DEFAULT']);
+// --- DELETE CUSTOMER FUNCTION ---
+    function deleteCustomer(index, event) {
+        // Ye line zaroori hai taaki delete dabane par customer load na ho jaye
+        if(event) event.stopPropagation(); 
+        
+        if(confirm("Are you sure you want to delete this customer?")) {
+            // List se uss index waale customer ko hatao
+            customerList.splice(index, 1);
+            // List ko wapas refresh karo
+            renderCustomerList();
+        }
+    }
     
 // --- CUSTOMER MODAL & ADD FUNCTION START ---
     
@@ -483,14 +495,22 @@
     function disableAllInputs(d){document.querySelectorAll('input,select,textarea').forEach(e=>{if(!['searchBox','cloudHistory','approvalHistory','allTariffHistory','mainApprovalHistory','approvalEmailBody'].includes(e.id)&&!e.id.startsWith('reportFilter')&&!e.id.startsWith('docLink_'))e.disabled=d})}
     function checkCommodityColor(){const c=document.getElementById('commodity');c.classList.remove('bg-yellow-300','bg-green-300','bg-blue-50');if(c.value==='NON-AGRI COMMODITY')c.classList.add('bg-yellow-300');else if(c.value==='AGRI COMMODITY')c.classList.add('bg-green-300');else c.classList.add('bg-blue-50');}
     
-    // UPDATED: Render Customer List for BOTH Sidebar and Horizontal View
+// UPDATED: Render Customer List with Delete Button
     function renderCustomerList(){
-        // Sidebar List
-        const listHtml = customerList.map((c,i)=>`<li class="py-1 px-2 border-b text-[10px] flex justify-between customer-item rounded ${i%2===0?'bg-blue-200':'bg-blue-50'}" onclick="findAndLoadCustomer('${c.name}')"><span class="font-bold text-gray-700">${c.name}</span><span class="text-[9px] text-gray-400">${c.date||''}</span></li>`).join('');
+        // Sidebar List (Ab isme Delete Button bhi hai)
+        const listHtml = customerList.map((c,i)=>`
+            <li class="py-1 px-2 border-b text-[10px] flex justify-between items-center customer-item rounded ${i%2===0?'bg-blue-200':'bg-blue-50'}" onclick="findAndLoadCustomer('${c.name}')">
+                <div class="flex flex-col overflow-hidden">
+                    <span class="font-bold text-gray-700 truncate">${c.name}</span>
+                    <span class="text-[9px] text-gray-400">${c.date||''}</span>
+                </div>
+                <button onclick="deleteCustomer(${i}, event)" class="text-red-500 hover:text-red-700 font-bold text-xs p-1 ml-2 z-10" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </li>`).join('');
         document.getElementById('customerList').innerHTML = listHtml;
 
         // Horizontal List for Approval View
-        // Updated styling: Blue text, Blue-50 background
         const approvalListHtml = customerList.map(c => `<li class="py-1 px-2 border text-[10px] flex items-center gap-2 customer-item rounded bg-white hover:bg-blue-50 cursor-pointer shadow-sm" onclick="findAndLoadCustomer('${c.name}')"><span class="font-bold text-sky-500">${c.name}</span><span class="text-[9px] text-gray-500">(${c.date||''})</span></li>`).join('');
         document.getElementById('approvalCustomerList').innerHTML = approvalListHtml;
     }
