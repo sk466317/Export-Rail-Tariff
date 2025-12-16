@@ -718,14 +718,7 @@ rows+=`<tr class="${s.label.includes('40" Upto')||s.label.includes('40" Over')?'
         // 1. Clear Inputs
         document.querySelectorAll('#approvalContainer input, #approvalContainer textarea, #approvalContainer select').forEach(el => {
            if(el.id !== 'approvalHistory' && el.id !== 'allTariffHistory' && el.id !== 'approvalEmailBody') el.value = ""; 
- 	// --- NEW CODE: Re-enable Save Button ---
-    const appBtn = document.getElementById('saveAppBtn');
-    appBtn.disabled = false;
-    appBtn.innerText = "SAVE APPROVAL";
-    appBtn.classList.add('animate-pulse', 'hover:bg-green-700');
-    appBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-gray-600');
-    // --- END ---
-	}
+        });
         // 2. Clear Static Tables
         document.getElementById('tbodyTransport_ap').innerHTML = "";
         document.getElementById('tbodyIncentive_ap').innerHTML = "";
@@ -748,8 +741,15 @@ rows+=`<tr class="${s.label.includes('40" Upto')||s.label.includes('40" Over')?'
         // Reset ID for fresh creation
         editingRecordRef = null;
         document.getElementById('tariffNo').value = `AP-${new Date().getFullYear()}${Math.floor(1000+Math.random()*9000)}`;
-    }
-
+	// --- NEW CODE: Re-enable Save Button ---
+    	const appBtn = document.getElementById('saveAppBtn');
+    	appBtn.disabled = false;
+    	appBtn.innerText = "SAVE APPROVAL";
+    	appBtn.classList.add('animate-pulse', 'hover:bg-green-700');
+    	appBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-gray-600');
+    	// --- END ---
+	}
+    
     function captureFullData(){
         const p=isApprovalMode?'ap_':'';
         const basic={ref:document.getElementById('tariffNo').value,date:document.getElementById('dateToday').value,comm:getVal(p+'commodity'),cust:getVal(p+'customerName'),type:getVal(p+'customerType'),vol:getVal(p+'volMonth'),cred:getVal(p+'creditDays'),ver:getVal(p+'salesPerson'),bill:getVal(p+'billingTerms'),stream:getVal(p+'stream'),preparedBy:document.getElementById('preparedByName').innerText};
@@ -879,8 +879,7 @@ rows+=`<tr class="${s.label.includes('40" Upto')||s.label.includes('40" Over')?'
         	appBtn.classList.remove('animate-pulse', 'hover:bg-green-700'); // Animation hatao
         	appBtn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-gray-600'); // Gray look
     			}
-    			// --- NEW CODE END ---																																							   
-                
+    			// --- NEW CODE END ---																																				                   
                 // --- FIX: LOCAL UPDATE TO PREVENT STALE DATA ---
                 // Google Cache purana data bhejta hai, isliye hum locally update karenge
                 
@@ -1572,9 +1571,3 @@ function filterDropdown() {
 </script>
 </body>
 </html>
-
-
-
-
-
-
