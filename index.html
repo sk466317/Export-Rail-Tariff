@@ -863,6 +863,16 @@ rows+=`<tr class="${s.label.includes('40" Upto')||s.label.includes('40" Over')?'
                 document.getElementById('progressSection').classList.add('hidden');
                 document.getElementById('successSection').classList.remove('hidden');
                 disableAllInputs(true);
+																																											   
+			// --- NEW CODE START: Disable Button After Save ---
+    		if(isApprovalMode) {
+        	const appBtn = document.getElementById('saveAppBtn');
+        	appBtn.disabled = true;  // Button click band
+        	appBtn.innerText = "SAVED ✓"; // Text change
+        	appBtn.classList.remove('animate-pulse', 'hover:bg-green-700'); // Animation hatao
+        	appBtn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-gray-600'); // Gray look
+    			}
+    			// --- NEW CODE END ---																																							   
                 
                 // --- FIX: LOCAL UPDATE TO PREVENT STALE DATA ---
                 // Google Cache purana data bhejta hai, isliye hum locally update karenge
@@ -1555,6 +1565,7 @@ function filterDropdown() {
 </script>
 </body>
 </html>
+
 
 
 
