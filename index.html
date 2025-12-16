@@ -413,7 +413,7 @@
     const cloudName="drbrz3rqv",uploadPreset="ml_default";
     let tableCounter=0,customerList=[],sheetRecords=[],editingRecordRef=null,isApprovalMode=false;
     const slabs=[{label:'20" 00 MT - 10 MT',p:30690,m:10092},{label:'20" 10 MT - 20 MT',p:38720,m:12595},{label:'20" 20 MT - 26 MT',p:46200,m:14512},{label:'20" 26 MT - 30 MT',p:50820,m:15378},{label:'20" Above 30.1 MT',p:50820,m:15378},{label:'40" Upto - 20 MT',p:53790,m:17275},{label:'40" Over - 20 MT',p:65890,m:19425}];
-    const subsidyData={'FACTORY':[0,0,0,0,0,0,0],'OWPL':[3200,3200,3200,3200,3200,5600,5600],'PSWC':[2500,2500,2500,2500,2500,4500,4500],'Other-2x20':[0,0,0,0,0,0,0]};
+    const subsidyData={'FACTORY':[0,0,0,0,0,0,0],'OWPL':[3200,3200,3200,3200,3200,5600,5600],'PSWC':[2500,2500,2500,2500,2500,4500,4500],'Double -2x20"':[0,0,0,0,0,0,0]};
     const lineData={'CUSTOMER':{bss:[0,0,0,0,0,0,0],rail:[0,0,0,0,0,0,0],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'MSC':{bss:[933,1161,1335,1414,1414,1548,1744],rail:[500,500,500,500,500,500,500],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'COSCO':{bss:[0,0,0,0,0,0,0],rail:[1490,2120,1900,2320,-2980,2790,2790],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'HAPAG':{bss:[933,1161,1335,1414,1414,1548,1744],rail:[600,600,600,600,600,1200,1200],wh:[2095,2095,2095,2162,4187,2550,2550],fs:[2570,2570,2570,2612,4562,3650,3650],self:[910,910,910,800,2225,700,700]},'CMA CGM':{bss:[933,910,1050,1120,1120,1290,1190],rail:[500,500,500,500,500,1000,1000],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'HMM LINE':{bss:[933,1161,1335,1414,1414,1548,1744],rail:[750,750,750,750,750,1250,1250],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'MAERSK':{bss:[5964,6632,9000,9630,9630,8552,10047],rail:[933,1161,1335,1414,1414,1548,1744],wh:[-1598,-1598,-1598,-923,1102,-1576,-1576],fs:[-1123,-1123,-1123,-473,1477,-476,-476],self:[-2243,-2243,-2243,-1768,-343,-2696,-2696]},'DEFAULT':{bss:[0,0,0,0,0,0,0],rail:[0,0,0,0,0,0,0],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]}};
     ['OOCL','SEABRIDGE','ONE LINE'].forEach(k=>lineData[k]=lineData['DEFAULT']);
 // --- DELETE CUSTOMER FUNCTION ---
@@ -604,7 +604,7 @@ rows+=`<tr class="${s.label.includes('40" Upto')||s.label.includes('40" Over')?'
                     <button onclick="addNewTableBlock()" class="bg-orange-500 text-white text-[10px] font-bold py-1 px-2 rounded uppercase shadow mb-1 w-full">Add Tariff Table</button>
                     <div id="status_${id}" class="px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase status-valid w-full">Approved & Valid</div>
                 </div>
-                <div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Type *</label><select id="tt_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-purple-50 text-purple-900 border-purple-300"><option value="">-- Select --</option><option value="FACTORY">FACTORY</option><option value="OWPL">OWPL</option><option value="PSWC">PSWC</option><option value="Other-2x20">Other-2x20</option></select></div>
+                <div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Type *</label><select id="tt_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-purple-50 text-purple-900 border-purple-300"><option value="">-- Select --</option><option value="FACTORY">FACTORY</option><option value="OWPL">OWPL</option><option value="PSWC">PSWC</option><option value="Double -2x20"">Double -2x20"</option></select></div>
                 <div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Line *</label><select id="sl_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-white uppercase border-blue-500"><option value="">-- Select --</option>${Object.keys(lineData).map(k=>`<option value="${k}">${k}</option>`).join('')}</select></div>
                 <div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">From</label><input type="date" id="df_${id}" class="input-field h-8 bg-white"></div>
                 <div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">To</label><input type="date" id="dt_${id}" class="input-field h-8 bg-white" onchange="updateTableValues(${id},true)"></div>
@@ -1555,4 +1555,5 @@ function filterDropdown() {
 </script>
 </body>
 </html>
+
 
