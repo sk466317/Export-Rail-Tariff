@@ -412,7 +412,15 @@
     const CONFIG={SCRIPT_URL:'https://script.google.com/macros/s/AKfycbzbG1Lg0-gYLmnuXgkgC3f2_L_s1oDJ0tP8J5ryGYWM2o-WfqANSsH_hd2707NHrboD/exec',SHEET_ID:'1iWYD0BShhoVYOx0HLkvs8-fz53JQisjuvARFGpt9hzg'};
     const cloudName="drbrz3rqv",uploadPreset="ml_default";
     let tableCounter=0,customerList=[],sheetRecords=[],editingRecordRef=null,isApprovalMode=false;
-    const slabs=[{label:'20" 00 MT - 10 MT',p:30690,m:10092},{label:'20" 10 MT - 20 MT',p:38720,m:12595},{label:'20" 20 MT - 26 MT',p:46200,m:14512},{label:'20" 26 MT - 30 MT',p:50820,m:15378},{label:'20" Above 30.1 MT',p:50820,m:15378},{label:'40" Upto - 20 MT',p:53790,m:17275},{label:'40" Over - 20 MT',p:65890,m:19425}];
+    const slabs = [
+    {label:'20" 00 MT - 10 MT', p:30690, m:10092},
+    {label:'20" 10 MT - 20 MT', p:38720, m:12595},
+    {label:'20" 20 MT - 26 MT', p:46200, m:14512},
+    {label:'20" 26 MT - 31 MT', p:50820, m:15378},  // यहां बदलाव किया गया
+    {label:'20" Above 30.1 MT', p:50820, m:15378},
+    {label:'40" Upto - 20 MT', p:53790, m:17275},
+    {label:'40" Over - 20 MT', p:65890, m:19425}
+];
     const subsidyData={'FACTORY':[0,0,0,0,0,0,0],'OWPL':[3200,3200,3200,3200,3200,5600,5600],'PSWC':[2500,2500,2500,2500,2500,4500,4500],'Double -2x20"':[0,0,0,0,0,0,0]};
     const lineData={'CUSTOMER':{bss:[0,0,0,0,0,0,0],rail:[0,0,0,0,0,0,0],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'MSC':{bss:[933,1161,1335,1414,1414,1548,1744],rail:[500,500,500,500,500,500,500],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'COSCO':{bss:[0,0,0,0,0,0,0],rail:[1490,2120,1900,2320,-2980,2790,2790],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'HAPAG':{bss:[933,1161,1335,1414,1414,1548,1744],rail:[600,600,600,600,600,1200,1200],wh:[2095,2095,2095,2162,4187,2550,2550],fs:[2570,2570,2570,2612,4562,3650,3650],self:[910,910,910,800,2225,700,700]},'CMA CGM':{bss:[933,910,1050,1120,1120,1290,1190],rail:[500,500,500,500,500,1000,1000],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'HMM LINE':{bss:[933,1161,1335,1414,1414,1548,1744],rail:[750,750,750,750,750,1250,1250],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]},'MAERSK':{bss:[5964,6632,9000,9630,9630,8552,10047],rail:[933,1161,1335,1414,1414,1548,1744],wh:[-1598,-1598,-1598,-923,1102,-1576,-1576],fs:[-1123,-1123,-1123,-473,1477,-476,-476],self:[-2243,-2243,-2243,-1768,-343,-2696,-2696]},'OTHER':{bss:[0,0,0,0,0,0,0],rail:[0,0,0,0,0,0,0],wh:[0,0,0,0,0,0,0],fs:[0,0,0,0,0,0,0],self:[0,0,0,0,0,0,0]}};
     ['OOCL','SEABRIDGE','ONE LINE'].forEach(k=>lineData[k]=lineData['OTHER']);
@@ -584,43 +592,129 @@
         }
     }
 
-    function updateTableValues(id,pres=false){
-        const t=document.getElementById(`tt_${id}`).value||'FACTORY',l=document.getElementById(`sl_${id}`).value||'OTHER',s=subsidyData[t]||subsidyData['FACTORY'],o=lineData[l]||lineData['OTHER'];
-        if(!pres){slabs.forEach((_,i)=>{document.getElementById(`t_${id}_sub_${i}`).value=s[i]||"";document.getElementById(`t_${id}_slr_${i}`).value=o.rail[i]||"";document.getElementById(`t_${id}_slb_${i}`).value=o.bss[i]||"";document.getElementById(`t_${id}_slw_${i}`).value=o.wh[i]||"";document.getElementById(`t_${id}_slf_${i}`).value=o.fs[i]||"";document.getElementById(`t_${id}_sls_${i}`).value=o.self[i]||""})}
-        slabs.forEach((_,i)=>{document.getElementById(`t_${id}_lbl_${i}`).value=`${l}/${t}`;calcTableRow(id,i)});checkExpiryLogic();
+   function updateTableValues(id,pres=false){
+    const t=document.getElementById(`tt_${id}`).value||'FACTORY',l=document.getElementById(`sl_${id}`).value||'OTHER',s=subsidyData[t]||subsidyData['FACTORY'],o=lineData[l]||lineData['OTHER'];
+    if(!pres){
+        slabs.forEach((_, originalIndex)=>{
+            if (originalIndex === 4) return;
+            const displayIndex = originalIndex > 4 ? originalIndex - 1 : originalIndex;
+            document.getElementById(`t_${id}_sub_${displayIndex}`).value = s[originalIndex] || "";
+            document.getElementById(`t_${id}_slr_${displayIndex}`).value = o.rail[originalIndex] || "";
+            document.getElementById(`t_${id}_slb_${displayIndex}`).value = o.bss[originalIndex] || "";
+            document.getElementById(`t_${id}_slw_${displayIndex}`).value = o.wh[originalIndex] || "";
+            document.getElementById(`t_${id}_slf_${displayIndex}`).value = o.fs[originalIndex] || "";
+            document.getElementById(`t_${id}_sls_${displayIndex}`).value = o.self[originalIndex] || "";
+        });
     }
+    slabs.forEach((_, originalIndex)=>{
+        if (originalIndex === 4) return;
+        const displayIndex = originalIndex > 4 ? originalIndex - 1 : originalIndex;
+        document.getElementById(`t_${id}_lbl_${displayIndex}`).value = `${l}/${t}`;
+        calcTableRow(id, displayIndex);
+    }); 
+    checkExpiryLogic();
+}
 
-    function addNewTableBlock(){
-        tableCounter++;const id=tableCounter,div=document.createElement('div');div.className="table-block mb-16 border border-gray-600 bg-white pb-4 rounded p-2 shadow-sm";div.id=`tableBlock_${id}`;
-        let rows='';slabs.forEach((s,i)=>{// Is puri line ko replace karein:
-rows+=`<tr class="${s.label.includes('40" Upto')||s.label.includes('40" Over')?'highlight-row':''}"><td class="bg-yellow-100"><input type="text" id="t_${id}_lbl_${i}" class="font-bold text-blue-900 w-full" readonly></td><td class="font-bold bg-transparent whitespace-nowrap">${s.label}</td><td><input type="number" id="t_${id}_pub_${i}" value="${s.p}" readonly tabindex="-1"></td><td><input type="number" id="t_${id}_railm_${i}" value="${s.m}" readonly tabindex="-1"></td><td><input type="number" id="t_${id}_disc_${i}" oninput="calcTableRow(${id},${i})" class="bg-yellow-col"></td>
-<td><input type="number" id="t_${id}_slr_${i}" oninput="calcTableRow(${id},${i})" class="bg-blue-50 font-bold text-blue-800"></td>
-<td><input type="number" id="t_${id}_slb_${i}" readonly tabindex="-1"></td><td><input type="number" id="t_${id}_slw_${i}" oninput="calcTableRow(${id},${i})" class="bg-blue-50 font-bold text-blue-800"></td><td><input type="number" id="t_${id}_slf_${i}" oninput="calcTableRow(${id},${i})" class="bg-blue-50 font-bold text-blue-800"></td><td><input type="number" id="t_${id}_sls_${i}" oninput="calcTableRow(${id},${i})" class="bg-blue-50 font-bold text-blue-800"></td><td><input type="number" id="t_${id}_cha_${i}" oninput="calcTableRow(${id},${i})" class="bg-teal-col"></td><td><input type="number" id="t_${id}_fwd_${i}" oninput="calcTableRow(${id},${i})" class="bg-teal-col"></td><td><input type="number" id="t_${id}_sub_${i}" oninput="calcTableRow(${id},${i})" class="bg-yellow-col font-bold"></td><td class="bg-gray-col"><span id="t_${id}_res_w_${i}"></span></td><td class="bg-gray-col"><span id="t_${id}_res_f_${i}"></span></td><td class="bg-gray-col"><span id="t_${id}_res_s_${i}"></span></td><td class="bg-red-col"><span id="t_${id}_res_t_${i}"></span></td></tr>`});
-        
-        div.innerHTML=`
-            <div id="headerBox_${id}" class="grid grid-cols-5 gap-4 mb-2 bg-[#1e293b] p-2 rounded border border-gray-800 items-end relative">
-                <button id="toggleBtn_${id}" onclick="toggleTableContent(${id})" class="absolute top-0 right-0 m-1 text-white text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded shadow z-10"><i class="fas fa-eye-slash"></i> Hide</button>
-                <div class="col-span-1 flex flex-col justify-end">
-                    <button onclick="addNewTableBlock()" class="bg-orange-500 text-white text-[10px] font-bold py-1 px-2 rounded uppercase shadow mb-1 w-full">Add Tariff Table</button>
-                    <div id="status_${id}" class="px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase status-valid w-full">Approved & Valid</div>
-                </div>
-                <div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Type *</label><select id="tt_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-purple-50 text-purple-900 border-purple-300"><option value="">-- Select --</option><option value="FACTORY">FACTORY</option><option value="OWPL">OWPL</option><option value="PSWC">PSWC</option><option value="Double -2x20"">Double -2x20"</option></select></div>
-                <div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Line *</label><select id="sl_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-white uppercase border-blue-500"><option value="">-- Select --</option>${Object.keys(lineData).map(k=>`<option value="${k}">${k}</option>`).join('')}</select></div>
-                <div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">From</label><input type="date" id="df_${id}" class="input-field h-8 bg-white"></div>
-                <div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">To</label><input type="date" id="dt_${id}" class="input-field h-8 bg-white" onchange="updateTableValues(${id},true)"></div>
+    function addNewTableBlock() {
+    tableCounter++;
+    const id = tableCounter;
+    const div = document.createElement('div');
+    div.className = "table-block mb-16 border border-gray-600 bg-white pb-4 rounded p-2 shadow-sm";
+    div.id = `tableBlock_${id}`;
+
+    let rows = '';
+    slabs.forEach((s, i) => {
+        if (i === 4) return; // 20" Above 30.1 MT को पूरी तरह स्किप करें
+        const displayIndex = i > 4 ? i - 1 : i;
+
+        rows += `<tr class="${s.label.includes('40" Upto') || s.label.includes('40" Over') ? 'highlight-row' : ''}">
+            <td class="bg-yellow-100"><input type="text" id="t_${id}_lbl_${displayIndex}" class="font-bold text-blue-900 w-full" readonly></td>
+            <td class="font-bold bg-transparent whitespace-nowrap">${s.label}</td>
+            <td><input type="number" id="t_${id}_pub_${displayIndex}" value="${s.p}" readonly tabindex="-1"></td>
+            <td><input type="number" id="t_${id}_railm_${displayIndex}" value="${s.m}" readonly tabindex="-1"></td>
+            <td><input type="number" id="t_${id}_disc_${displayIndex}" oninput="calcTableRow(${id},${displayIndex})" class="bg-yellow-col"></td>
+            <td><input type="number" id="t_${id}_slr_${displayIndex}" oninput="calcTableRow(${id},${displayIndex})" class="bg-blue-50 font-bold text-blue-800"></td>
+            <td><input type="number" id="t_${id}_slb_${displayIndex}" readonly tabindex="-1"></td>
+            <td><input type="number" id="t_${id}_slw_${displayIndex}" oninput="calcTableRow(${id},${displayIndex})" class="bg-blue-50 font-bold text-blue-800"></td>
+            <td><input type="number" id="t_${id}_slf_${displayIndex}" oninput="calcTableRow(${id},${displayIndex})" class="bg-blue-50 font-bold text-blue-800"></td>
+            <td><input type="number" id="t_${id}_sls_${displayIndex}" oninput="calcTableRow(${id},${displayIndex})" class="bg-blue-50 font-bold text-blue-800"></td>
+            <td><input type="number" id="t_${id}_cha_${displayIndex}" oninput="calcTableRow(${id},${displayIndex})" class="bg-teal-col"></td>
+            <td><input type="number" id="t_${id}_fwd_${displayIndex}" oninput="calcTableRow(${id},${displayIndex})" class="bg-teal-col"></td>
+            <td><input type="number" id="t_${id}_sub_${displayIndex}" oninput="calcTableRow(${id},${displayIndex})" class="bg-yellow-col font-bold"></td>
+            <td class="bg-gray-col"><span id="t_${id}_res_w_${displayIndex}"></span></td>
+            <td class="bg-gray-col"><span id="t_${id}_res_f_${displayIndex}"></span></td>
+            <td class="bg-gray-col"><span id="t_${id}_res_s_${displayIndex}"></span></td>
+            <td class="bg-red-col"><span id="t_${id}_res_t_${displayIndex}"></span></td>
+        </tr>`;
+    });
+
+    div.innerHTML = `
+        <div id="headerBox_${id}" class="grid grid-cols-5 gap-4 mb-2 bg-[#1e293b] p-2 rounded border border-gray-800 items-end relative">
+            <button id="toggleBtn_${id}" onclick="toggleTableContent(${id})" class="absolute top-0 right-0 m-1 text-white text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded shadow z-10"><i class="fas fa-eye-slash"></i> Hide</button>
+            <div class="col-span-1 flex flex-col justify-end">
+                <button onclick="addNewTableBlock()" class="bg-orange-500 text-white text-[10px] font-bold py-1 px-2 rounded uppercase shadow mb-1 w-full">Add Tariff Table</button>
+                <div id="status_${id}" class="px-2 py-1.5 rounded text-[10px] font-bold text-center uppercase status-valid w-full">Approved & Valid</div>
             </div>
-            
-            <div id="tableContent_${id}" class="content-collapsible">
-                <div class="upload-section-mini w-1/2 no-print mb-1"><div class="upload-box-mini inline-block mr-2" onclick="triggerUpload(${id})"><span style="font-size:18px;">📂</span> <span id="uploadStatus_${id}" class="text-xs font-bold text-gray-700">Upload Doc</span></div><input type="file" id="fileInput_${id}" style="display:none" onchange="uploadToCloudinary(this,${id})"><input type="hidden" id="docLink_${id}"><button type="button" id="previewBtn_${id}" class="bg-teal-600 text-white text-[10px] font-bold py-0.5 px-2 rounded hidden hover:bg-teal-700 shadow" onclick="openDocModal(${id})">View</button></div>
-                <div class="mb-2"><textarea id="tbl_rem_${id}" class="w-full border border-black rounded p-1 text-xs bg-yellow-100 font-bold resize-none text-black" rows="2" placeholder="Table remarks..."></textarea></div>
-                <div class="flex justify-end mb-1"><button onclick="if(confirm('Remove?')){this.closest('.table-block').remove();checkExpiryLogic();}" class="text-red-500 font-bold text-xs hover:underline no-pdf">Remove Table</button></div>
-                <div class="overflow-x-auto"><table class="tariff-table border border-gray-600"><thead class="th-main text-white"><tr><th class="w-32">Line /Type</th><th class="w-40">Weight Slab</th><th>Public</th><th>Rail Margins</th><th class="bg-amber-600 border-amber-800">Discount Rail</th><th>Line Disc Rail</th><th>Line Disc BSS</th><th>Line Disc WH</th><th>Line Disc F/S</th><th>Line Disc Self</th><th class="bg-emerald-700 border-emerald-800">CHA Inc</th><th class="bg-emerald-700 border-emerald-800">Fwd Inc</th><th>Subsidy</th><th class="bg-slate-700 text-white border-slate-800">Margin WH</th><th class="bg-slate-700 text-white border-slate-800">Margin F/S</th><th class="bg-slate-700 text-white border-slate-800">Margin Self</th><th class="bg-red-700 text-white border-red-900">Billing</th></tr></thead><tbody>${rows}</tbody></table></div>
-            </div>`;
-        const container = isApprovalMode ? document.getElementById('ap_tablesContainer') : document.getElementById('tablesContainer');
-        container.appendChild(div);
-        updateTableValues(id);
-    }
+            <div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Type *</label>
+                <select id="tt_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-purple-50 text-purple-900 border-purple-300">
+                    <option value="">-- Select --</option>
+                    <option value="FACTORY">FACTORY</option>
+                    <option value="OWPL">OWPL</option>
+                    <option value="PSWC">PSWC</option>
+                    <option value="Double -2x20"">Double -2x20"</option>
+                </select>
+            </div>
+            <div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Line *</label>
+                <select id="sl_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-white uppercase border-blue-500">
+                    <option value="">-- Select --</option>
+                    ${Object.keys(lineData).map(k => `<option value="${k}">${k}</option>`).join('')}
+                </select>
+            </div>
+            <div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">From</label><input type="date" id="df_${id}" class="input-field h-8 bg-white"></div>
+            <div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">To</label><input type="date" id="dt_${id}" class="input-field h-8 bg-white" onchange="updateTableValues(${id},true)"></div>
+        </div>
 
+        <div id="tableContent_${id}" class="content-collapsible">
+            <div class="upload-section-mini w-1/2 no-print mb-1">
+                <div class="upload-box-mini inline-block mr-2" onclick="triggerUpload(${id})"><span style="font-size:18px;">📂</span> <span id="uploadStatus_${id}" class="text-xs font-bold text-gray-700">Upload Doc</span></div>
+                <input type="file" id="fileInput_${id}" style="display:none" onchange="uploadToCloudinary(this,${id})">
+                <input type="hidden" id="docLink_${id}">
+                <button type="button" id="previewBtn_${id}" class="bg-teal-600 text-white text-[10px] font-bold py-0.5 px-2 rounded hidden hover:bg-teal-700 shadow" onclick="openDocModal(${id})">View</button>
+            </div>
+            <div class="mb-2"><textarea id="tbl_rem_${id}" class="w-full border border-black rounded p-1 text-xs bg-yellow-100 font-bold resize-none text-black" rows="2" placeholder="Table remarks..."></textarea></div>
+            <div class="flex justify-end mb-1"><button onclick="if(confirm('Remove?')){this.closest('.table-block').remove();checkExpiryLogic();}" class="text-red-500 font-bold text-xs hover:underline no-pdf">Remove Table</button></div>
+            <div class="overflow-x-auto">
+                <table class="tariff-table border border-gray-600">
+                    <thead class="th-main text-white">
+                        <tr>
+                            <th class="w-32">Line /Type</th>
+                            <th class="w-40">Weight Slab</th>
+                            <th>Public</th>
+                            <th>Rail Margins</th>
+                            <th class="bg-amber-600 border-amber-800">Discount Rail</th>
+                            <th>Line Disc Rail</th>
+                            <th>Line Disc BSS</th>
+                            <th>Line Disc WH</th>
+                            <th>Line Disc F/S</th>
+                            <th>Line Disc Self</th>
+                            <th class="bg-emerald-700 border-emerald-800">CHA Inc</th>
+                            <th class="bg-emerald-700 border-emerald-800">Fwd Inc</th>
+                            <th>Subsidy</th>
+                            <th class="bg-slate-700 text-white border-slate-800">Margin WH</th>
+                            <th class="bg-slate-700 text-white border-slate-800">Margin F/S</th>
+                            <th class="bg-slate-700 text-white border-slate-800">Margin Self</th>
+                            <th class="bg-red-700 text-white border-red-900">Billing</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        </div>`;
+
+    const container = isApprovalMode ? document.getElementById('ap_tablesContainer') : document.getElementById('tablesContainer');
+    container.appendChild(div);
+    updateTableValues(id);
+}
     function triggerUpload(id){document.getElementById(`fileInput_${id}`).click()}
     function uploadToCloudinary(inp,id){
         const f=inp.files[0];if(!f)return;
@@ -1035,42 +1129,40 @@ function filterDropdown() {
         
         // --- TABLES LOAD LOGIC ---
         d.tables.forEach(t=>{
-            addNewTableBlock();
-            const id=tableCounter;
-            document.getElementById(`tt_${id}`).value=t.tt;
-            document.getElementById(`sl_${id}`).value=t.sl;
-            document.getElementById(`df_${id}`).value=t.df;
-            document.getElementById(`dt_${id}`).value=t.dt;
-            document.getElementById(`tbl_rem_${id}`).value=t.rem;
-            
-            if(t.docLink){
-                document.getElementById(`docLink_${id}`).value=t.docLink;
-                document.getElementById(`previewBtn_${id}`).classList.remove('hidden');
-            }
-            
-            t.rows.forEach((row,x)=>{
-                document.getElementById(`t_${id}_pub_${x}`).value=row.pub;
-                document.getElementById(`t_${id}_railm_${x}`).value=row.railm;
-                document.getElementById(`t_${id}_disc_${x}`).value=row.disc;
-                
-                // IMPORTANT: Saved SLR value ko load karo
-                document.getElementById(`t_${id}_slr_${x}`).value=row.slr;
-                
-                document.getElementById(`t_${id}_slb_${x}`).value=row.slb;
-                document.getElementById(`t_${id}_slw_${x}`).value=row.slw;
-                document.getElementById(`t_${id}_slf_${x}`).value=row.slf;
-                document.getElementById(`t_${id}_sls_${x}`).value=row.sls;
-                document.getElementById(`t_${id}_cha_${x}`).value=row.cha;
-                document.getElementById(`t_${id}_fwd_${x}`).value=row.fwd;
-                document.getElementById(`t_${id}_sub_${x}`).value=row.sub;
-                
-                calcTableRow(id,x);
-            });
-            
-            // Logic Update: updateTableValues ko 'true' (preserve) ke sath call karein 
-            // taaki ye abhi load kiye gaye SLR data ko overwrite na kare
-            updateTableValues(id,true);
-        });
+    addNewTableBlock();
+    const id=tableCounter;
+    document.getElementById(`tt_${id}`).value=t.tt;
+    document.getElementById(`sl_${id}`).value=t.sl;
+    document.getElementById(`df_${id}`).value=t.df;
+    document.getElementById(`dt_${id}`).value=t.dt;
+    document.getElementById(`tbl_rem_${id}`).value=t.rem;
+    if(t.docLink){
+        document.getElementById(`docLink_${id}`).value=t.docLink;
+        document.getElementById(`previewBtn_${id}`).classList.remove('hidden');
+    }
+    
+    t.rows.forEach((row, originalIndex)=>{
+        let displayIndex = originalIndex;
+        if (originalIndex > 4) displayIndex = originalIndex - 1; // इंडेक्स 5 और 6 को एक कम करें
+        if (originalIndex === 4) return; // इंडेक्स 4 को पूरी तरह स्किप करें
+        
+        document.getElementById(`t_${id}_pub_${displayIndex}`).value = row.pub || "";
+        document.getElementById(`t_${id}_railm_${displayIndex}`).value = row.railm || "";
+        document.getElementById(`t_${id}_disc_${displayIndex}`).value = row.disc || "";
+        document.getElementById(`t_${id}_slr_${displayIndex}`).value = row.slr || "";
+        document.getElementById(`t_${id}_slb_${displayIndex}`).value = row.slb || "";
+        document.getElementById(`t_${id}_slw_${displayIndex}`).value = row.slw || "";
+        document.getElementById(`t_${id}_slf_${displayIndex}`).value = row.slf || "";
+        document.getElementById(`t_${id}_sls_${displayIndex}`).value = row.sls || "";
+        document.getElementById(`t_${id}_cha_${displayIndex}`).value = row.cha || "";
+        document.getElementById(`t_${id}_fwd_${displayIndex}`).value = row.fwd || "";
+        document.getElementById(`t_${id}_sub_${displayIndex}`).value = row.sub || "";
+        
+        calcTableRow(id, displayIndex);
+    });
+    
+    updateTableValues(id, true); // preserve=true ताकि डिफ़ॉल्ट वैल्यूज ओवरराइट न हों
+});
         
         document.getElementById('tbodyTransport').innerHTML='';d.transport.forEach(t=>addTransportRow({t:t.transporter,d:t.destination,d20:t.d20,d40:t.d40,rem:t.remarks}));
         document.getElementById('tbodyIncentive').innerHTML='';d.incentives.forEach(i=>addIncentiveRow({l:i.line,d20:i.d20,d40:i.d40,rem:i.remarks}));
@@ -1571,4 +1663,3 @@ function filterDropdown() {
 </script>
 </body>
 </html>
-
