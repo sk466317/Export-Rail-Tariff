@@ -663,12 +663,12 @@
             </div>
             <div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Type *</label>
                 <select id="tt_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-purple-50 text-purple-900 border-purple-300">
-                    <option value="">-- Select --</option>
-                    <option value="FACTORY">FACTORY</option>
-                    <option value="OWPL">OWPL</option>
-                    <option value="PSWC">PSWC</option>
-                    <option value="Double -2x20"">Double -2x20"</option>
-                </select>
+    <option value="">-- Select --</option>
+    <option value="FACTORY">FACTORY</option>
+    <option value="OWPL">OWPL</option>
+    <option value="PSWC">PSWC</option>
+    <option value="Double-2x20">Double -2x20"</option>
+</select>
             </div>
             <div class="col-span-1"><label class="block text-[10px] font-bold text-white uppercase">Line *</label>
                 <select id="sl_${id}" onchange="updateTableValues(${id})" class="input-field h-8 bg-white uppercase border-blue-500">
@@ -851,38 +851,64 @@
 	}
     
     function captureFullData(){
-        const p=isApprovalMode?'ap_':'';
-        const basic={ref:document.getElementById('tariffNo').value,date:document.getElementById('dateToday').value,comm:getVal(p+'commodity'),cust:getVal(p+'customerName'),type:getVal(p+'customerType'),vol:getVal(p+'volMonth'),cred:getVal(p+'creditDays'),ver:getVal(p+'salesPerson'),bill:getVal(p+'billingTerms'),stream:getVal(p+'stream'),preparedBy:document.getElementById('preparedByName').innerText};
-        const tables=[]; const docLinks=[];
-        document.querySelectorAll('.table-block').forEach(b=>{
-    
-    slabs.forEach((_, originalIndex) => {
-        if (originalIndex === 4) return; // skip index 4
-        const displayIndex = originalIndex > 4 ? originalIndex - 1 : originalIndex;
+    const p = isApprovalMode ? 'ap_' : '';
+    const basic = {
+        ref: document.getElementById('tariffNo').value,
+        date: document.getElementById('dateToday').value,
+        comm: getVal(p + 'commodity'),
+        cust: getVal(p + 'customerName'),
+        type: getVal(p + 'customerType'),
+        vol: getVal(p + 'volMonth'),
+        cred: getVal(p + 'creditDays'),
+        ver: getVal(p + 'salesPerson'),
+        bill: getVal(p + 'billingTerms'),
+        stream: getVal(p + 'stream'),
+        preparedBy: document.getElementById('preparedByName').innerText
+    };
+    const tables = [];
+    const docLinks = [];
 
-        const getVal = (field) => {
-            const el = document.getElementById(`t_${id}_${field}_${displayIndex}`);
-            return el ? (parseFloat(el.value) || 0) : 0;
-        };
+    document.querySelectorAll('.table-block').forEach(b => {
+        const id = b.id.split('_')[1];          // ← id को यहाँ declare करना जरूरी है
+        const rows = [];
 
-        rows.push({
-            pub: getVal('pub'),
-            railm: getVal('railm'),
-            disc: getVal('disc'),
-            slr: getVal('slr'),
-            slb: getVal('slb'),
-            slw: getVal('slw'),
-            slf: getVal('slf'),
-            sls: getVal('sls'),
-            cha: getVal('cha'),
-            fwd: getVal('fwd'),
-            sub: getVal('sub')
+        slabs.forEach((_, originalIndex) => {
+            if (originalIndex === 4) return;    // "Above 30.1 MT" skip
+            const displayIndex = originalIndex > 4 ? originalIndex - 1 : originalIndex;
+
+            const getVal = (field) => {
+                const el = document.getElementById(`t_${id}_${field}_${displayIndex}`);
+                return el ? (parseFloat(el.value) || 0) : 0;
+            };
+
+            rows.push({
+                displayIndex: displayIndex,
+                pub: getVal('pub'),
+                railm: getVal('railm'),
+                disc: getVal('disc'),
+                slr: getVal('slr'),
+                slb: getVal('slb'),
+                slw: getVal('slw'),
+                slf: getVal('slf'),
+                sls: getVal('sls'),
+                cha: getVal('cha'),
+                fwd: getVal('fwd'),
+                sub: getVal('sub')
+            });
         });
-    });
 
-    // ... continue with pushing to tables array
-});        
-        // Capture specific tables based on mode
+        tables.push({
+            tt: document.getElementById(`tt_${id}`).value || '',
+            sl: document.getElementById(`sl_${id}`).value || '',
+            df: document.getElementById(`df_${id}`).value || '',
+            dt: document.getElementById(`dt_${id}`).value || '',
+            rem: document.getElementById(`tbl_rem_${id}`).value || '',
+            docLink: document.getElementById(`docLink_${id}`).value || '',
+            rows: rows
+        });
+    });   // ← forEach यहाँ बंद होता है (केवल एक );
+
+   // Capture specific tables based on mode
         let transport=[], incentives=[];
         if(isApprovalMode) {
             document.querySelectorAll('#tbodyTransport_ap tr').forEach(tr=>{
@@ -904,11 +930,25 @@
         // --- NEW: Add Approval Tag ---
         // If saving from Main Form (Update Mode), isApproval MUST be false
         // If saving from Approval Mode, isApproval MUST be true
-        const isApp = isApprovalMode;
 
-        return {basic,tables,transport,incentives,remarks:{thc:getVal(p+'remTHC'),special:getVal(p+'remSpecial'),add:getVal(p+'remAdd')},customers:customerList,docLink:docLinks.join(', '), isApproval: isApp};
-    }
+    // --- NEW: Add Approval Tag ---
+    const isApp = isApprovalMode;
 
+    return {
+        basic,
+        tables,
+        transport,
+        incentives,
+        remarks: {
+            thc: getVal(p + 'remTHC'),
+            special: getVal(p + 'remSpecial'),
+            add: getVal(p + 'remAdd')
+        },
+        customers: customerList,
+        docLink: docLinks.join(', '),
+        isApproval: isApp
+    };
+}
     async function saveDataToSheet(mode = 'auto'){
         // Validation for Approval Mode
         if (isApprovalMode) {
@@ -1168,26 +1208,36 @@ function filterDropdown() {
         document.getElementById(`previewBtn_${id}`).classList.remove('hidden');
     }
     
-    t.rows.forEach((row, originalIndex)=>{
-        let displayIndex = originalIndex;
-        if (originalIndex > 4) displayIndex = originalIndex - 1; // इंडेक्स 5 और 6 को एक कम करें
-        if (originalIndex === 4) return; // इंडेक्स 4 को पूरी तरह स्किप करें
-        
-        document.getElementById(`t_${id}_pub_${displayIndex}`).value = row.pub || "";
-        document.getElementById(`t_${id}_railm_${displayIndex}`).value = row.railm || "";
-        document.getElementById(`t_${id}_disc_${displayIndex}`).value = row.disc || "";
-        document.getElementById(`t_${id}_slr_${displayIndex}`).value = row.slr || "";
-        document.getElementById(`t_${id}_slb_${displayIndex}`).value = row.slb || "";
-        document.getElementById(`t_${id}_slw_${displayIndex}`).value = row.slw || "";
-        document.getElementById(`t_${id}_slf_${displayIndex}`).value = row.slf || "";
-        document.getElementById(`t_${id}_sls_${displayIndex}`).value = row.sls || "";
-        document.getElementById(`t_${id}_cha_${displayIndex}`).value = row.cha || "";
-        document.getElementById(`t_${id}_fwd_${displayIndex}`).value = row.fwd || "";
-        document.getElementById(`t_${id}_sub_${displayIndex}`).value = row.sub || "";
-        
-        calcTableRow(id, displayIndex);
-    });
-    
+    t.rows.forEach((row, oldIndex) => {
+    let displayIndex;
+
+    // नई records: displayIndex पहले से saved है
+    if (row.displayIndex !== undefined) {
+        displayIndex = row.displayIndex;
+    } else {
+        // पुरानी records के लिए compatibility
+        // oldIndex 4 ("Above 30.1 MT") को skip करें क्योंकि वह अब नहीं है
+        if (oldIndex === 4) return;
+
+        // 40" rows को सही displayIndex पर map करें
+        displayIndex = oldIndex > 4 ? oldIndex - 1 : oldIndex;
+    }
+
+    // सभी fields भरें
+    document.getElementById(`t_${id}_pub_${displayIndex}`).value = row.pub || "";
+    document.getElementById(`t_${id}_railm_${displayIndex}`).value = row.railm || "";
+    document.getElementById(`t_${id}_disc_${displayIndex}`).value = row.disc || "";
+    document.getElementById(`t_${id}_slr_${displayIndex}`).value = row.slr || "";
+    document.getElementById(`t_${id}_slb_${displayIndex}`).value = row.slb || "";
+    document.getElementById(`t_${id}_slw_${displayIndex}`).value = row.slw || "";
+    document.getElementById(`t_${id}_slf_${displayIndex}`).value = row.slf || "";
+    document.getElementById(`t_${id}_sls_${displayIndex}`).value = row.sls || "";
+    document.getElementById(`t_${id}_cha_${displayIndex}`).value = row.cha || "";
+    document.getElementById(`t_${id}_fwd_${displayIndex}`).value = row.fwd || "";
+    document.getElementById(`t_${id}_sub_${displayIndex}`).value = row.sub || "";
+
+    calcTableRow(id, displayIndex);
+});
     updateTableValues(id, true); // preserve=true ताकि डिफ़ॉल्ट वैल्यूज ओवरराइट न हों
 });
         
@@ -1690,5 +1740,3 @@ function filterDropdown() {
 </script>
 </body>
 </html>
-
-
