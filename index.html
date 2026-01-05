@@ -855,33 +855,33 @@
         const basic={ref:document.getElementById('tariffNo').value,date:document.getElementById('dateToday').value,comm:getVal(p+'commodity'),cust:getVal(p+'customerName'),type:getVal(p+'customerType'),vol:getVal(p+'volMonth'),cred:getVal(p+'creditDays'),ver:getVal(p+'salesPerson'),bill:getVal(p+'billingTerms'),stream:getVal(p+'stream'),preparedBy:document.getElementById('preparedByName').innerText};
         const tables=[]; const docLinks=[];
         document.querySelectorAll('.table-block').forEach(b=>{
-            const id=b.id.split('_')[1],rows=[];
-            const rows = [];
-slabs.forEach((_, originalIndex) => {
-    if (originalIndex === 4) return; // skip index 4
-    const displayIndex = originalIndex > 4 ? originalIndex - 1 : originalIndex;
+    
+    slabs.forEach((_, originalIndex) => {
+        if (originalIndex === 4) return; // skip index 4
+        const displayIndex = originalIndex > 4 ? originalIndex - 1 : originalIndex;
 
-    const getVal = (field) => {
-        const el = document.getElementById(`t_${id}_${field}_${displayIndex}`);
-        return el ? (parseFloat(el.value) || 0) : 0;
-    };
+        const getVal = (field) => {
+            const el = document.getElementById(`t_${id}_${field}_${displayIndex}`);
+            return el ? (parseFloat(el.value) || 0) : 0;
+        };
 
-    rows.push({
-        pub: getVal('pub'),
-        railm: getVal('railm'),
-        disc: getVal('disc'),
-        slr: getVal('slr'),
-        slb: getVal('slb'),
-        slw: getVal('slw'),
-        slf: getVal('slf'),
-        sls: getVal('sls'),
-        cha: getVal('cha'),
-        fwd: getVal('fwd'),
-        sub: getVal('sub')
+        rows.push({
+            pub: getVal('pub'),
+            railm: getVal('railm'),
+            disc: getVal('disc'),
+            slr: getVal('slr'),
+            slb: getVal('slb'),
+            slw: getVal('slw'),
+            slf: getVal('slf'),
+            sls: getVal('sls'),
+            cha: getVal('cha'),
+            fwd: getVal('fwd'),
+            sub: getVal('sub')
+        });
     });
-});
 
-        
+    // ... continue with pushing to tables array
+});        
         // Capture specific tables based on mode
         let transport=[], incentives=[];
         if(isApprovalMode) {
@@ -1690,4 +1690,5 @@ function filterDropdown() {
 </script>
 </body>
 </html>
+
 
