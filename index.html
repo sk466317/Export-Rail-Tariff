@@ -606,12 +606,18 @@
             document.getElementById(`t_${id}_sls_${displayIndex}`).value = o.self[originalIndex] || "";
         });
     }
-    slabs.forEach((_, originalIndex)=>{
-        if (originalIndex === 4) return;
-        const displayIndex = originalIndex > 4 ? originalIndex - 1 : originalIndex;
-        document.getElementById(`t_${id}_lbl_${displayIndex}`).value = `${l}/${t}`;
-        calcTableRow(id, displayIndex);
-    }); 
+    slabs.forEach((s, originalIndex) => {
+    if (originalIndex === 4) return; // skip "Above 30.1 MT"
+    const displayIndex = originalIndex > 4 ? originalIndex - 1 : originalIndex;
+
+    const lblEl = document.getElementById(`t_${id}_lbl_${displayIndex}`);
+    if (lblEl) lblEl.value = `${l}/${t}`;
+
+    // Safe calc only if row exists
+    const pubEl = document.getElementById(`t_${id}_pub_${displayIndex}`);
+    if (pubEl) calcTableRow(id, displayIndex);
+});
+ 
     checkExpiryLogic();
 }
 
@@ -850,10 +856,31 @@
         const tables=[]; const docLinks=[];
         document.querySelectorAll('.table-block').forEach(b=>{
             const id=b.id.split('_')[1],rows=[];
-            for(let i=0;i<7;i++)rows.push({pub:document.getElementById(`t_${id}_pub_${i}`).value,railm:document.getElementById(`t_${id}_railm_${i}`).value,disc:document.getElementById(`t_${id}_disc_${i}`).value,slr:document.getElementById(`t_${id}_slr_${i}`).value,slb:document.getElementById(`t_${id}_slb_${i}`).value,slw:document.getElementById(`t_${id}_slw_${i}`).value,slf:document.getElementById(`t_${id}_slf_${i}`).value,sls:document.getElementById(`t_${id}_sls_${i}`).value,cha:document.getElementById(`t_${id}_cha_${i}`).value,fwd:document.getElementById(`t_${id}_fwd_${i}`).value,sub:document.getElementById(`t_${id}_sub_${i}`).value});
-            const dl=document.getElementById(`docLink_${id}`).value; if(dl)docLinks.push(dl);
-            tables.push({tt:document.getElementById(`tt_${id}`).value,sl:document.getElementById(`sl_${id}`).value,df:document.getElementById(`df_${id}`).value,dt:document.getElementById(`dt_${id}`).value,rem:document.getElementById(`tbl_rem_${id}`).value,rows:rows,docLink:dl});
-        });
+            const rows = [];
+slabs.forEach((_, originalIndex) => {
+    if (originalIndex === 4) return; // skip index 4
+    const displayIndex = originalIndex > 4 ? originalIndex - 1 : originalIndex;
+
+    const getVal = (field) => {
+        const el = document.getElementById(`t_${id}_${field}_${displayIndex}`);
+        return el ? (parseFloat(el.value) || 0) : 0;
+    };
+
+    rows.push({
+        pub: getVal('pub'),
+        railm: getVal('railm'),
+        disc: getVal('disc'),
+        slr: getVal('slr'),
+        slb: getVal('slb'),
+        slw: getVal('slw'),
+        slf: getVal('slf'),
+        sls: getVal('sls'),
+        cha: getVal('cha'),
+        fwd: getVal('fwd'),
+        sub: getVal('sub')
+    });
+});
+
         
         // Capture specific tables based on mode
         let transport=[], incentives=[];
@@ -1663,3 +1690,4 @@ function filterDropdown() {
 </script>
 </body>
 </html>
+
