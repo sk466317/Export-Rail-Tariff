@@ -170,7 +170,7 @@
                         <!-- Right Side: Action Buttons -->
                         <div class="flex items-center gap-1 flex-wrap justify-end">
                             <div class="text-white text-xs font-bold flex items-center mr-1 bg-gray-700 px-2 py-1 rounded"><i class="fas fa-user-circle mr-1"></i> <span id="currentUserDisplay">User</span></div>
-                            <button onclick="openReportModal()" class="bg-indigo-600 text-white px-3 py-1 rounded font-bold text-xs hover:bg-indigo-700 shadow">Reports</button>
+                            <button onclick="exportMasterReportToExcelDetailed()" class="bg-indigo-600 text-white px-3 py-1 rounded font-bold text-xs hover:bg-indigo-700 shadow">Reports</button>
                             <button onclick="sendEmail()" class="admin-only bg-blue-500 text-white px-3 py-1 rounded font-bold text-xs hover:bg-blue-600 shadow">Email</button>
                             <button onclick="copyToClipboard()" class="admin-only bg-teal-600 text-white px-3 py-1 rounded font-bold text-xs hover:bg-teal-700 shadow">Img</button>
 			    <button onclick="downloadMainAsHTML()" class="admin-only bg-orange-500 text-white px-3 py-1 rounded font-bold text-xs hover:bg-orange-600 shadow">Download Tariff</button>
@@ -399,7 +399,7 @@
     <div class="bg-white rounded-lg shadow-2xl w-[95%] h-[90%] flex flex-col border border-gray-600">
         <div class="bg-gray-800 p-4 border-b border-gray-600 flex justify-between items-center"><h2 class="text-xl font-bold text-white">Reports</h2><button onclick="closeReportModal()" class="text-white text-2xl">&times;</button></div>
         <div class="bg-gray-200 p-2 flex gap-2 items-center flex-wrap"><select id="reportFilterCustomerSelect" class="border border-black text-black rounded px-2 py-1 text-xs font-bold" onchange="generateMasterReport()"></select><input type="text" id="reportFilterCust" placeholder="Search..." class="border border-black text-black rounded px-2 py-1 text-xs w-40 font-bold" oninput="generateMasterReport()"><select id="reportFilterSales" class="border border-black text-black rounded px-2 py-1 text-xs font-bold" onchange="generateMasterReport()"></select><select id="reportFilterComm" class="border border-black text-black rounded px-2 py-1 text-xs font-bold" onchange="generateMasterReport()"></select><select id="reportFilterLine" class="border border-black text-black rounded px-2 py-1 text-xs font-bold" onchange="generateMasterReport()"></select><select id="reportFilterType" class="border border-black text-black rounded px-2 py-1 text-xs font-bold" onchange="generateMasterReport()"></select><button onclick="resetReportFilters()" class="text-xs text-blue-600 ml-2">Reset</button></div>
-        <div class="bg-gray-100 p-2 flex gap-2"><button onclick="generateMasterReport()" class="px-3 py-2 bg-blue-600 text-white rounded font-bold text-xs">Master Report</button><button onclick="exportReportToExcel()" class="px-3 py-2 bg-emerald-700 text-white rounded font-bold text-xs">Excel</button></div>
+        <div class="bg-gray-100 p-2 flex gap-2"><button onclick="generateMasterReport()" class="px-3 py-2 bg-blue-600 text-white rounded font-bold text-xs">Master Report</button><button onclick="exportMasterReportToExcelDetailed()" class="px-3 py-2 bg-emerald-700 text-white rounded font-bold text-xs">Excel</button>
         <div class="flex-1 overflow-auto p-4 bg-gray-50 text-black" id="reportContent"></div>
     </div>
 </div>
@@ -1737,6 +1737,98 @@ function filterDropdown() {
             alert("Error generating HTML: " + e.message);
         }
     }
+// --- NEW EXCEL EXPORT FUNCTION ---
+function exportMasterReportToExcelDetailed() {
+    if (typeof XLSX === 'undefined') {
+        alert("Excel लाइब्रेरी लोड नहीं हुई। कृपया इंटरनेट चेक करें या पेज रिफ्रेश करें।");
+        return;
+    }
+
+    if (!sheetRecords || sheetRecords.length === 0) {
+        alert("कोई डेटा उपलब्ध नहीं है डाउनलोड करने के लिए।");
+        return;
+    }
+
+    const data = [];
+
+    // मुख्य हेडर
+    data.push([
+        "Ref No", "Customer Name", "Date", "Commodity", "Sales Person",
+        "Billing Terms", "Volume/Month", "Status",
+        "THC Subsidy Remarks", "Special Arrangements", "ADDITIONAL REMARKS",
+        "Type", "Line", "From", "To", "Table Status",
+        "Weight Slab", "Discount Rail", "Line Disc Rail", "Line Disc BSS",
+        "Line Disc WH", "Line Disc F/S", "Line Disc Self",
+        "CHA Inc", "Fwd Inc", "Subsidy", "Billing"
+    ]);
+
+    sheetRecords.forEach(r => {
+        const b = r.parsedData?.basic || {};
+        const remarks = r.parsedData?.remarks || {};
+        const status = r.parsedData?.isApproval === true ? "Pending Approval" : "Approved & Valid";
+
+        // यदि कोई टेबल नहीं है
+        if (!r.parsedData?.tables?.length) {
+            data.push([
+                b.ref || "-", b.cust || "-", b.date || "-", b.comm || "-",
+                b.ver || "-", b.bill || "-", b.vol || "-", status,
+                remarks.thc || "-", remarks.special || "-", remarks.add || "-",
+                "-", "-", "-", "-", "-",
+                "-", "-", "-", "-", "-", "-", "-",
+                "-", "-", "-", "-"
+            ]);
+            return;
+        }
+
+        // हर टेबल के लिए
+        r.parsedData.tables.forEach(tbl => {
+            const tableStatus = (tbl.dt && new Date(tbl.dt) < new Date()) ? "Expired" : "Approved & Valid";
+
+            // यदि टेबल में rows नहीं हैं
+            if (!tbl.rows?.length) {
+                data.push([
+                    b.ref || "-", b.cust || "-", b.date || "-", b.comm || "-",
+                    b.ver || "-", b.bill || "-", b.vol || "-", status,
+                    remarks.thc || "-", remarks.special || "-", remarks.add || "-",
+                    tbl.tt || "-", tbl.sl || "-", tbl.df || "-", tbl.dt || "-", tableStatus,
+                    "-", "-", "-", "-", "-", "-", "-",
+                    "-", "-", "-", "-"
+                ]);
+                return;
+            }
+
+            // हर slab (row) के लिए
+            tbl.rows.forEach(row => {
+                data.push([
+                    b.ref || "-", b.cust || "-", b.date || "-", b.comm || "-",
+                    b.ver || "-", b.bill || "-", b.vol || "-", status,
+                    remarks.thc || "-", remarks.special || "-", remarks.add || "-",
+                    tbl.tt || "-", tbl.sl || "-", tbl.df || "-", tbl.dt || "-", tableStatus,
+                    row.label || row.weight || "-",            // Weight Slab
+                    row.disc || "-",                             // Discount Rail
+                    row.slr || "-",                              // Line Disc Rail
+                    row.slb || "-",                              // Line Disc BSS
+                    row.slw || "-",                              // Line Disc WH
+                    row.slf || "-",                              // Line Disc F/S
+                    row.sls || "-",                              // Line Disc Self
+                    row.cha || "-",                              // CHA Inc
+                    row.fwd || "-",                              // Fwd Inc
+                    row.sub || "-",                              // Subsidy
+                    row.res_t || row.billing || "-"            // Billing
+                ]);
+            });
+        });
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Full_Tariff_Details");
+
+    ws['!cols'] = data[0].map(() => ({ wch: 18 }));
+
+    const fileName = `Full_Tariff_Detailed_Report_${new Date().toISOString().slice(0,10)}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+}
 </script>
 </body>
 </html>
