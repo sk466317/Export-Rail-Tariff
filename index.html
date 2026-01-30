@@ -281,7 +281,7 @@
                     <button id="saveAppBtn" onclick="saveDataToSheet()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded shadow text-xs font-bold animate-pulse">SAVE APPROVAL</button>
                     
                     <!-- EXISTING BUTTON -->
-                    <button onclick="downloadApprovalAsImage()" class="bg-teal-600 text-white px-4 py-1.5 rounded text-xs font-bold shadow hover:bg-teal-700" title="Download as Image"><i class="fas fa-image mr-1"></i> Img</button>
+                    <button onclick="copyToClipboard(event)" class="bg-teal-600 text-white px-4 py-1.5 rounded text-xs font-bold shadow hover:bg-teal-700" title="Copy for Outlook"><i class="fas fa-copy mr-1"></i> Email-Outlook</button>
                     
                     <!-- NEW BUTTONS REQUESTED -->
                     <button onclick="downloadApprovalAsExcel()" class="bg-emerald-700 text-white px-4 py-1.5 rounded text-xs font-bold shadow hover:bg-emerald-800" title="Download Excel with Formatting"><i class="fas fa-file-excel mr-1"></i> Excel</button>
@@ -436,7 +436,78 @@
             renderCustomerList();
         }
     }
+async function copyToClipboard(event) {
+    const targetId = isApprovalMode ? 'approvalContainer' : 'printArea';
+    const container = document.getElementById(targetId);
     
+    if (!container) { alert("Data not found!"); return; }
+
+    const clone = container.cloneNode(true);
+    
+    // Outlook specific font variable
+    const outlookFont = "'Calibri Light', 'Calibri', sans-serif";
+    
+    // 1. Process Inputs into Text with Calibri Light Force
+    const origInputs = container.querySelectorAll('input, select, textarea');
+    const cloneInputs = clone.querySelectorAll('input, select, textarea');
+    
+    for (let i = 0; i < cloneInputs.length; i++) {
+        const orig = origInputs[i];
+        const copy = cloneInputs[i];
+        if (!orig) continue;
+
+        const span = document.createElement('span');
+        let val = (orig.tagName === 'SELECT') ? (orig.options[orig.selectedIndex]?.text || "") : orig.value;
+        
+        span.innerText = val || " - ";
+        // Calibri Light force at span level
+        span.style.cssText = `font-family: ${outlookFont} !important; font-size: 7pt !important; font-weight: bold; color: #1d4ed8;`;
+        
+        if (copy.parentNode) copy.parentNode.replaceChild(span, copy);
+    }
+
+    // 2. Clean UI elements
+    const toRemove = clone.querySelectorAll('button, .no-print, .upload-section-mini, select, #allTariffHistory, #approvalHistory, #mainApprovalHistory');
+    toRemove.forEach(e => e.remove());
+
+    // 3. Outlook Wrapper with Font Global Fix
+    const wrapper = document.createElement('div');
+    // Global font override for the whole div
+    wrapper.style.cssText = `font-family: ${outlookFont} !important; font-size: 7pt !important; width: 100%; color: #000;`;
+    wrapper.innerHTML = clone.innerHTML;
+
+    // Apply Compact Styling & Force Calibri Light on Tables/Cells
+    wrapper.querySelectorAll('table').forEach(tbl => {
+        tbl.setAttribute('border', '1');
+        tbl.style.cssText = `border-collapse: collapse; width: 80% !important; border: 1px solid #000; font-family: ${outlookFont} !important; font-size: 7pt !important;`;
+    });
+
+    wrapper.querySelectorAll('th').forEach(th => {
+        th.style.cssText = `background-color: #1e3a8a; color: #ffffff; font-size: 7pt !important; padding: 1px 2px; border: 1px solid #000; text-transform: uppercase; font-family: ${outlookFont} !important;`;
+    });
+
+    wrapper.querySelectorAll('td').forEach(td => {
+        td.style.cssText = `border: 1px solid #888; padding: 1px 2px; font-size: 7pt !important; color: #000; font-family: ${outlookFont} !important;`;
+    });
+
+    // Color indicators maintain
+    wrapper.querySelectorAll('.highlight-row').forEach(row => row.style.backgroundColor = "#f0f9ff");
+    wrapper.querySelectorAll('.bg-red-col').forEach(cell => cell.style.backgroundColor = "#fee2e2");
+    wrapper.querySelectorAll('.bg-yellow-col').forEach(cell => cell.style.backgroundColor = "#fefce8");
+
+    // 4. Execute Copy with Rich Text
+    try {
+        const blob = new Blob([wrapper.innerHTML], { type: 'text/html' });
+        const data = [new ClipboardItem({ 'text/html': blob })];
+        await navigator.clipboard.write(data);
+        
+        alert("All Data Copy , Please Paste Ctrl +V in Outlook Body");
+
+    } catch (err) {
+        console.error('Copy Error:', err);
+        alert("Clipboard error. Please try manually.");
+    }
+}    
 // --- CUSTOMER MODAL & ADD FUNCTION START ---
     
     function openCustomerModal() {
