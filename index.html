@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -138,12 +137,12 @@
     <a href="javascript:void(0)" onclick="forgotPassword()" class="text-[13px] font-bold text-red-700 hover:underline uppercase">Get Password on Email ID</a>
 </div>
 
-<button onclick="attemptLogin()" class="w-full bg-blue-800 ...">Secure Login</button>
+<button onclick="attemptLogin()" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded shadow uppercase text-sm mt-2">Secure Login</button>
+        </div>
     </div>
 </div>
 
-<div class="main-wrapper" id="appContent" style="display: none;">
-    <!-- LEFT CONTENT AREA -->
+<div class="main-wrapper" id="appContent" style="display: none;">    <!-- LEFT CONTENT AREA -->
     <div class="content-area">
         
         <!-- MAIN FORM CONTAINER -->
@@ -819,37 +818,52 @@ function forgotPassword() {
         const S_ID = "service_kqh6am4";
         const T_ID = "template_bwpw6sk";
 
-        // यहाँ ध्यान दें: हमने 'message' और 'password' दोनों भेजे हैं 
-        // ताकि टेम्पलेट में जो भी वेरिएबल हो, उसे डेटा मिल जाए
         const templateParams = {
             to_name: user,
             to_email: data.email,
-            password: data.pass,      // अगर टेम्पलेट में {{password}} है
-            message: data.pass,       // अगर टेम्पलेट में {{message}} है
-            user_password: data.pass, // अगर टेम्पलेट में {{user_password}} है
+            message: data.pass,      // आपके DB में 'pass' इस्तेमाल हुआ है
+            password: data.pass,     
             from_name: "Tariff System Admin"
         };
 
         emailjs.send(S_ID, T_ID, templateParams, P_KEY)
             .then(function() {
                 alert("SUCCESS! Password sent to " + data.email);
-            }, function(error) {
+            })
+            .catch(function(error) {
                 alert("FAILED... " + JSON.stringify(error));
             });
     }
 }
     // --- MAIN FUNCTIONS ---
     function attemptLogin(){
-        const u=document.getElementById('loginUser').value,p=document.getElementById('loginPass').value;
-        if(USER_DATABASE[u]&&USER_DATABASE[u].pass===p){
-            document.getElementById('login-screen').style.display='none';document.getElementById('appContent').style.display='flex';
-            const s=document.getElementById('salesPerson'),as=document.getElementById('ap_salesPerson');if(s)s.value=u;if(as)as.value=u;
-            document.getElementById('currentUserDisplay').innerText=u;document.getElementById('preparedByName').innerText=u;
-            const isAdmin=ADMIN_USERS.includes(u);
-            document.querySelectorAll('.admin-only').forEach(b=>b.classList.toggle('hidden-by-role',!isAdmin));
-            fetchSheetData();
-        }else{alert("Invalid Credentials");}
+    const u = document.getElementById('loginUser').value;
+    const p = document.getElementById('loginPass').value;
+    
+    if(USER_DATABASE[u] && USER_DATABASE[u].pass === p){
+        // लॉगिन सफल होने पर स्क्रीन स्विच करना
+        document.getElementById('login-screen').style.display = 'none';
+        
+        const appContent = document.getElementById('appContent');
+        appContent.style.display = 'flex'; // flex का इस्तेमाल करें ताकि लेआउट खराब न हो
+        
+        // यूजर सेटिंग्स लोड करना
+        document.getElementById('currentUserDisplay').innerText = u;
+        document.getElementById('preparedByName').innerText = u;
+        
+        // एडमिन चेक
+        const isAdmin = ADMIN_USERS.includes(u);
+        document.querySelectorAll('.admin-only').forEach(b => b.classList.toggle('hidden-by-role', !isAdmin));
+        
+        // डेटा सिंक करना
+        fetchSheetData();
+        
+        // ब्लैक स्क्रीन से बचने के लिए ज़ूम या ओवरफ़्लो चेक
+        document.body.style.overflow = 'auto'; 
+    } else {
+        alert("Invalid Credentials");
     }
+}
     
     function toggleApprovalMode(show, isFresh=false){
         isApprovalMode=show;
