@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -133,9 +134,11 @@
             <div>
                 <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Password</label>
                 <input type="password" id="loginPass" class="w-full border-2 border-gray-300 rounded p-2 text-sm font-bold text-blue-900" placeholder="Enter Password">
-            </div>
-            <button onclick="attemptLogin()" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-3 rounded shadow uppercase text-sm">Secure Login</button>
-        </div>
+</div> <div class="flex justify-end px-1">
+    <a href="javascript:void(0)" onclick="forgotPassword()" class="text-[13px] font-bold text-red-700 hover:underline uppercase">Get Password on Email ID</a>
+</div>
+
+<button onclick="attemptLogin()" class="w-full bg-blue-800 ...">Secure Login</button>
     </div>
 </div>
 
@@ -801,7 +804,40 @@ async function copyToClipboard(event) {
     }
     function openDocModal(id){const l=document.getElementById(`docLink_${id}`).value;if(!l)return;document.getElementById("fullDocLink").href=l;document.getElementById("downloadDocLink").href=l.replace('/upload/','/upload/fl_attachment/');document.getElementById("docModalBody").innerHTML=l.endsWith('.pdf')?`<iframe src="${l}" class="w-full h-[500px]"></iframe>`:`<img src="${l}" class="max-w-full max-h-[500px] mx-auto">`;document.getElementById("docPreviewModal").classList.remove('hidden');}
     function closeDocModal(){document.getElementById("docPreviewModal").classList.add('hidden')}
+function forgotPassword() {
+    const user = document.getElementById('loginUser').value;
+    if (!user) { 
+        alert("Please Select User First!"); 
+        return; 
+    }
 
+    const data = USER_DATABASE[user];
+    if (!data) return;
+
+    if (confirm(`Send password to ${data.email}?`)) {
+        const P_KEY = "Hb0oU56d79ASV96Nh";
+        const S_ID = "service_kqh6am4";
+        const T_ID = "template_bwpw6sk";
+
+        // यहाँ ध्यान दें: हमने 'message' और 'password' दोनों भेजे हैं 
+        // ताकि टेम्पलेट में जो भी वेरिएबल हो, उसे डेटा मिल जाए
+        const templateParams = {
+            to_name: user,
+            to_email: data.email,
+            password: data.pass,      // अगर टेम्पलेट में {{password}} है
+            message: data.pass,       // अगर टेम्पलेट में {{message}} है
+            user_password: data.pass, // अगर टेम्पलेट में {{user_password}} है
+            from_name: "Tariff System Admin"
+        };
+
+        emailjs.send(S_ID, T_ID, templateParams, P_KEY)
+            .then(function() {
+                alert("SUCCESS! Password sent to " + data.email);
+            }, function(error) {
+                alert("FAILED... " + JSON.stringify(error));
+            });
+    }
+}
     // --- MAIN FUNCTIONS ---
     function attemptLogin(){
         const u=document.getElementById('loginUser').value,p=document.getElementById('loginPass').value;
