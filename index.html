@@ -1220,34 +1220,41 @@ function forgotPassword() {
 
     // PRE-PARSING OPTIMIZATION: Parse JSON once on fetch
     function fetchSheetData(){
-        document.getElementById('syncStatus').innerText="Syncing...";
-        window.handleGvizResponse=function(j){
-            if(!j||!j.table)return;
-            sheetRecords=j.table.rows.map(r=>{
-                const c=r.c;
-                if(!c||c.length<5)return null;
-                const jStr=c[4]?.v||"";
-                if(!jStr.startsWith('{')) return null;
-                try {
-                    const parsed = JSON.parse(jStr);
-                    return {
-                        timestamp:c[0]?.v,
-                        ref:c[1]?.v,
-                        name:c[2]?.v,
-                        date:c[3]?.f||c[3]?.v,
-                        jsonData:jStr,
-                        parsedData: parsed // Store pre-parsed data
-                    };
-                } catch(e) { return null; }
-            }).filter(r=>r!==null).sort((a,b)=>a.name.localeCompare(b.name));
-            
-            // Populate Dropdowns using re-rendering instead of display:none
-            repopulateDropdowns();
-            
-            document.getElementById('syncStatus').innerText=`Total Sheets (${sheetRecords.length})`;
-        };
-        const s=document.createElement('script');s.src=`https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=responseHandler:handleGvizResponse&tq=SELECT%20A,B,C,D,E`;document.body.appendChild(s);
-    }
+    document.getElementById('syncStatus').innerText="Syncing...";
+    window.handleGvizResponse=function(j){
+        if(!j||!j.table)return;
+        sheetRecords=j.table.rows.map(r=>{
+            const c=r.c;
+            if(!c||c.length<5)return null;
+            const jStr=c[4]?.v||"";
+            if(!jStr.startsWith('{')) return null;
+            try {
+                const parsed = JSON.parse(jStr);
+                return {
+                    timestamp:c[0]?.v,
+                    ref:c[1]?.v,
+                    name:c[2]?.v || "UNKNOWN", // अगर नाम खाली है तो UNKNOWN लिखें
+                    date:c[3]?.f||c[3]?.v,
+                    jsonData:jStr,
+                    parsedData: parsed 
+                };
+            } catch(e) { return null; }
+        }).filter(r=>r!==null);
+        
+        // सुरक्षित सॉर्टिंग: चेक करें कि नाम मौजूद है
+        sheetRecords.sort((a,b) => {
+            const nameA = (a.name || "").toString();
+            const nameB = (b.name || "").toString();
+            return nameA.localeCompare(nameB);
+        });
+        
+        repopulateDropdowns();
+        document.getElementById('syncStatus').innerText=`Total Sheets (${sheetRecords.length})`;
+    };
+    const s=document.createElement('script');
+    s.src=`https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=responseHandler:handleGvizResponse&tq=SELECT%20A,B,C,D,E&t=${new Date().getTime()}`;
+    document.body.appendChild(s);
+}
 
 // Search box ke liye missing function
 function filterDropdown() {
@@ -1953,3 +1960,4 @@ function exportMasterReportToExcelDetailed() {
 </script>
 </body>
 </html>
+
